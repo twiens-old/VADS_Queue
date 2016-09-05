@@ -7,6 +7,8 @@ public class Range {
     private Node begin;
     private Node end;
 
+    public Range(){}
+
     public Range(Node begin, Node end) {
         this.setBegin(begin);
         this.setEnd(end);

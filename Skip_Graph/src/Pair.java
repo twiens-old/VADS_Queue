@@ -5,6 +5,8 @@ public class Pair {
     private Node nodeZero;
     private Node nodeOne;
 
+    public Pair(){}
+
     public Pair(Node nodeZero, Node nodeOne) {
         this.setNodeZero(nodeZero);
         this.setNodeOne(nodeOne);
