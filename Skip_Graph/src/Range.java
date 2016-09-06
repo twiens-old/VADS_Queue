@@ -30,8 +30,7 @@ public class Range {
         this.begin = begin;
     }
 
-    // TODO: still to implement
     public boolean isNodeInsideRange(Node node) {
-        throw new NotImplementedException();
+        return node.equals(begin) || node.isGreaterThan(begin) || node.isLessThan(end) || node.equals(end);
     }
 }

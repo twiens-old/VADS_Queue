@@ -1,3 +1,5 @@
+import java.util.BitSet;
+
 /**
  * Created by twiens on 24.08.16.
  */
@@ -11,8 +13,19 @@ public class Main {
 
         Node[] nodes = new Node[n];
 
+        String[] nodesIds = new String[]{
+            "000",
+            "001",
+            "010",
+            "011",
+            "100",
+            "101",
+            "110",
+            "111",
+        };
+
         for (int i = 0; i < n; i++) {
-            nodes[i] = new Node();
+            nodes[i] = new Node(nodesIds[i]);
         }
 
         nodes[0].send(nodes[1]);
