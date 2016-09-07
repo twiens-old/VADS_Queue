@@ -1,25 +1,25 @@
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by twiens, fischerr, jeromeK on 8/23/16.
  */
-public class Node extends Subject {
+public class Node extends Subject implements Comparable<Node> {
     private static final int NUMBER_OF_BITS = 3;
+    public static final Node nullNode = new Node("");
 
     private BitSequence ID;
-    private HashSet<Node>[] neighbours;
+    private TreeSet<Node>[] neighbours;
     private Range[] range;
     private Pair[] predecessor;
     private Pair[] successor;
 
+    private TreeSet<Node> receivedNodes = new TreeSet<>();
+
     public Node() {
         this.ID = UniqueRandomBitStringGenerator.GenerateUniqueRandomBitSet(this.NUMBER_OF_BITS);
-        this.neighbours = new HashSet[NUMBER_OF_BITS];
+        this.neighbours = new TreeSet[NUMBER_OF_BITS];
         this.range = new Range[NUMBER_OF_BITS];
         this.predecessor = new Pair[NUMBER_OF_BITS];
         this.successor = new Pair[NUMBER_OF_BITS];
@@ -28,15 +28,13 @@ public class Node extends Subject {
             this.predecessor[i] = new Pair();
             this.successor[i] = new Pair();
             this.range[i] = new Range();
-            this.neighbours[i] = new HashSet<>();
+            this.neighbours[i] = new TreeSet<>();
         }
     }
 
     public Node (String sequence) {
-        println("Constructor " + sequence);
-
         this.ID = new BitSequence(sequence);
-        this.neighbours = new HashSet[NUMBER_OF_BITS];
+        this.neighbours = new TreeSet[NUMBER_OF_BITS];
         this.range = new Range[NUMBER_OF_BITS];
         this.predecessor = new Pair[NUMBER_OF_BITS];
         this.successor = new Pair[NUMBER_OF_BITS];
@@ -45,7 +43,7 @@ public class Node extends Subject {
             this.predecessor[i] = new Pair();
             this.successor[i] = new Pair();
             this.range[i] = new Range();
-            this.neighbours[i] = new HashSet<>();
+            this.neighbours[i] = new TreeSet<>();
         }
     }
 
@@ -57,6 +55,7 @@ public class Node extends Subject {
     @Override
     protected void onMessageReceived(Object message) {
         if (message instanceof Node) {
+            this.receivedNodes.add((Node) message);
             this.linearize((Node) message);
         }
     }
@@ -66,11 +65,84 @@ public class Node extends Subject {
         // Regel 1a
         // Für jeden Level i stellt jeder Knoten u periodisch alle Knoten in N_i(u) vor, dass diese eine sortierte Liste
         // bilden
+        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+            Iterator<Node> iterator = this.neighbours[i].iterator();
+
+            if (iterator.hasNext()) {
+                Node current = iterator.next();
+
+                // TODO: vielleicht nochmal schöner machen
+                Node next = null;
+                while (iterator.hasNext() && current.isLessThan(this) && this.isGreaterThan(next)) {
+                    next = iterator.next();
+
+                    if (!this.isGreaterThan(next)) {
+                        break;
+                    }
+
+                    current.send(next);
+                    current = next;
+                }
+
+                current = this.neighbours[i].floor(this);
+
+                if (current != null) {
+                    current.send(this);
+                }
+            }
+
+            iterator = this.neighbours[i].descendingIterator();
+
+            if (iterator.hasNext()) {
+                Node current = iterator.next();
+
+                Node next = null;
+                while (iterator.hasNext() && current.isGreaterThan(this) && this.isLessThan(next)) {
+                    next = iterator.next();
+
+                    if (!this.isLessThan(next)) {
+                        break;
+                    }
+
+                    current.send(next);
+                    current = next;
+                }
+
+                current = this.neighbours[i].ceiling(this);
+
+                if (current != null) {
+                    current.send(this);
+                }
+            }
+        }
 
         // Regel 1b
         // Für jeden Level i stellt jeder Knoten u periodisch seinen nächsten Vorgängern und Nachfolgern den Knoten
         // v_j e N_i(v) vor, dass alle Knoten links von u den Nachfolger rechts von u kennenlernen und alle Knoten
         // rechts von u den Vorgänger links von u kennenlernen
+
+        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+            Node v = this.neighbours[i].floor(this);
+            Node w = this.neighbours[i].ceiling(this);
+
+            if (w != null) {
+                SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
+                for (Node current : nodes_less_than_us) {
+                    if (current.range[i].isNodeInsideRange(w)) {
+                        current.send(w);
+                    }
+                }
+            }
+
+            if (v != null && w != null) {
+                SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(w);
+                for (Node current : nodes_greater_than_us) {
+                    if (current.range[i].isNodeInsideRange(v)) {
+                        current.send(v);
+                    }
+                }
+            }
+        }
     }
 
     private void linearize(Node v) {
@@ -82,20 +154,16 @@ public class Node extends Subject {
         // den Knoten w', zu dem w delegiert wird. Solch ein Knoten existiert immer, da w !e range_i(u), und er muss
         // zwischen u und w liegen, d.h. der ID-Bereich von (w',w) ist innerhalb des ID-Bereichs von (u,w)
 
-        println("Start linearize from node " + v.getID());
-
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
             // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
-                println("Knoten " + this.getID() + " überprüft ob Knoten " + v.getID() +
-                        " in seiner Range ist und der Prefix matched. [Level " + i + "]");
                 this.neighbours[i].add(v);
             }
 
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
-                    if (predecessor[i].getNodeOne() == null || predecessor[i].getNodeOne().isLessThan(v)) {  // prüfe ob besserer nächste Vorgänger existiert
+                    if (predecessor[i].getNodeOne() == nullNode || predecessor[i].getNodeOne().isLessThan(v)) {  // prüfe ob besserer nächste Vorgänger existiert
                         // TODO: delgiere alten Vorgänger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         predecessor[i].setNodeOne(v);
@@ -105,7 +173,7 @@ public class Node extends Subject {
                 }
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
-                    if (predecessor[i].getNodeZero() == null || predecessor[i].getNodeZero().isLessThan(v)) {
+                    if (predecessor[i].getNodeZero() == nullNode || predecessor[i].getNodeZero().isLessThan(v)) {
                         // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         predecessor[i].setNodeZero(v);
@@ -118,7 +186,7 @@ public class Node extends Subject {
             // successors
             if (this.isLessThan(v)) {                   // überprüfe ob v Nachfolger von this
                 if (prefixMatch(i, this, v, 1)) {   // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
-                    if (successor[i].getNodeOne() == null || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
+                    if (successor[i].getNodeOne() == nullNode || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
                     // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                     successor[i].setNodeOne(v);
@@ -128,7 +196,7 @@ public class Node extends Subject {
                 }
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
-                    if (successor[i].getNodeZero() == null || successor[i].getNodeZero().isGreaterThan(v)) {
+                    if (successor[i].getNodeZero() == nullNode || successor[i].getNodeZero().isGreaterThan(v)) {
                         // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         successor[i].setNodeZero(v);
@@ -174,19 +242,42 @@ public class Node extends Subject {
 
     // TODO: think about better naming
     private void updateNeighbours(int i) {
-        for (Node node : neighbours[i]) {
-            if (!range[i].isNodeInsideRange(node)) {
-                for (int j = NUMBER_OF_BITS-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
-                    for (Node neighbour : neighbours[j]) {
-                        if (prefixMatch(j, neighbour)) {
-                            neighbour.send(node);
+        TreeSet<Node> removedNeighbours = new TreeSet<>();
 
-                            neighbours[i].remove(node);
+        for (Node node : neighbours[i]) {
+            if (!range[i].isNodeInsideRange(node)) {        // TODO: Range ist falsch, Knoten wird fälschlicherweise aus Nachbarschaft entfernt
+                removedNeighbours.add(node);
+                                                             // finde Knoten mit größer Präfixübereinstimmung
+                for (int j = NUMBER_OF_BITS-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
+                    boolean neighbourDelegated = false;
+                    for (Node neighbour : neighbours[j]) {
+                        if (!neighbour.equals(node) && prefixMatch(j, neighbour)) {
+                            neighbour.send(node);
+                            neighbourDelegated = true;
+                            continue;
                         }
+                    }
+
+                    if (neighbourDelegated) {
+                        continue;
                     }
                 }
             }
         }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("########################################################################\n");
+        sb.append("Removed Neighbours in Node " + this.getID() + "\n");
+        sb.append("Level = " + i + "\n");
+
+        for (Node node : removedNeighbours) {
+            this.neighbours[i].remove(node);
+            sb.append(node.getID() + ", ");
+        }
+
+        sb.append("\n########################################################################");
+
+        println(sb.toString());
     }
 
     public boolean isGreaterThan(Node anotherNode) {
@@ -212,18 +303,30 @@ public class Node extends Subject {
         return thisPrefix.equals(anotherPrefix);
     }
 
-    public void printNeighbourhood() {
-        println("This Knoten ID " + this.getID());
+    public synchronized void printNeighbourhood() {
+        println("########################################################################");
+
+        println("Knoten ID: " + this.getID());
+
+        print("Received Nodes: ");
+        Iterator<Node> iterator = receivedNodes.iterator();
+        while(iterator.hasNext()) {
+            print(iterator.next().getID() + ", ");
+        }
+        println("");
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            println("Ausgabe der Nachbarn Level " + i);
+            println("Level " + i +  "(Pred0: " + this.predecessor[i].getNodeZero().getID() +
+                                    " Pred1: " + this.predecessor[i].getNodeOne().getID() +
+                                    " Succ0: " + this.successor[i].getNodeZero().getID() +
+                                    " Succ1: " + this.successor[i].getNodeOne().getID());
             for (Node neighbour : this.neighbours[i]) {
-                print(" Neighbour: " + neighbour.getID());
+                print("\t" + neighbour.getID() + ", ");
             }
             println("");
         }
 
-        println("####################################");
+        println("########################################################################");
     }
 
     public boolean equals(Object anotherObject) {
@@ -243,7 +346,7 @@ public class Node extends Subject {
         if (b == 1) {
             firstId = firstId.append(true);
         } else {
-            firstId.append(false);
+            firstId = firstId.append(false);
         }
 
         BitSequence secondId = secondNode.getID().getPrefix(i+1);
@@ -271,5 +374,22 @@ public class Node extends Subject {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Node anotherObject) {
+        if ((anotherObject != null)) {
+            if (this.isLessThan(anotherObject)) {
+                return -1;
+            }
+
+            if (this.isGreaterThan(anotherObject)) {
+                return 1;
+            }
+
+            return 0;
+        } else {
+            throw new IllegalArgumentException("Object compared to node is null.");
+        }
     }
 }

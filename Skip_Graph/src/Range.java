@@ -31,6 +31,6 @@ public class Range {
     }
 
     public boolean isNodeInsideRange(Node node) {
-        return node.equals(begin) || node.isGreaterThan(begin) || node.isLessThan(end) || node.equals(end);
+        return (node.equals(begin) || node.isGreaterThan(begin)) && (node.isLessThan(end) || node.equals(end));
     }
 }

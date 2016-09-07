@@ -1,4 +1,5 @@
 import java.util.BitSet;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Created by twiens on 24.08.16.
@@ -28,6 +29,9 @@ public class Main {
             nodes[i] = new Node(nodesIds[i]);
         }
 
+        //nodes[2].send(nodes[7]);
+        //Thread.sleep(1000);
+        //nodes[2].send(nodes[5]);
         nodes[0].send(nodes[1]);
         nodes[2].send(nodes[1]);
         //nodes[3].send(nodes[9]);

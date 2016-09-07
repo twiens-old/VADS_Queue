@@ -42,6 +42,10 @@ public class BitSequence {
     public String toString(){
         StringBuilder sb = new StringBuilder();
 
+        if (this.bitSequence.length == 0) {
+            sb.append("NaN");
+        }
+
         for(int i = 0; i < this.bitSequence.length; i++) {
             if (this.bitSequence[i]) {
                 sb.append("1");
@@ -80,7 +84,16 @@ public class BitSequence {
         return true;
     }
 
+    // wir gehend davon aus, dass die längere BitSequence auch immer größer ist
     public boolean isGreaterThan(BitSequence anotherBitSequence){
+        if (anotherBitSequence.bitSequence.length > this.bitSequence.length) {
+            return false;
+        }
+
+        if (this.bitSequence.length > anotherBitSequence.bitSequence.length) {
+            return true;
+        }
+
         for (int i = 0; i < this.bitSequence.length; i++) {
             if (this.bitSequence[i] && !anotherBitSequence.bitSequence[i]) {
                 return true;
@@ -93,6 +106,14 @@ public class BitSequence {
     }
 
     public boolean isLessThan(BitSequence anotherBitSequence){
+        if (anotherBitSequence.bitSequence.length > this.bitSequence.length) {
+            return true;
+        }
+
+        if (this.bitSequence.length > anotherBitSequence.bitSequence.length) {
+            return false;
+        }
+
         for (int i = 0; i < this.bitSequence.length; i++) {
             if (!this.bitSequence[i] && anotherBitSequence.bitSequence[i]) {
                 return true;

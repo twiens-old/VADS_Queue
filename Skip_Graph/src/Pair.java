@@ -21,10 +21,18 @@ public class Pair {
     }
 
     public Node getNodeZero() {
+        if (this.nodeZero == null) {
+            return Node.nullNode;
+        }
+
         return this.nodeZero;
     }
 
     public Node getNodeOne() {
+        if (this.nodeOne == null) {
+            return Node.nullNode;
+        }
+
         return this.nodeOne;
     }
 }
