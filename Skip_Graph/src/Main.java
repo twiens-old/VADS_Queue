@@ -38,7 +38,8 @@ public class Main {
         nodes[4].send(nodes[2]);
         nodes[4].send(nodes[3]);
         nodes[5].send(nodes[0]);
-//        nodes[5].send(nodes[4]);
+        nodes[5].send(nodes[4]);        // TODO: funktioniert nicht, wenn diese Kante entfernt wird ... WARUM?!?!
+        nodes[0].send(nodes[3]);        // TODO:
         nodes[6].send(nodes[5]);
         nodes[6].send(nodes[7]);
         //nodes[6].send(nodes[8]);
@@ -50,7 +51,7 @@ public class Main {
         }
 
         // 3 sekunden laufen lassen
-        Thread.sleep(5000);
+        Thread.sleep(3000);
 
         for (int i = 0; i < n; i++) {
             nodes[i].stopSubject();
@@ -85,9 +86,9 @@ public class Main {
                 // Nachfolger bestimmen
                 boolean foundSuccessor0 = false;
                 boolean foundSuccessor1 = false;
+                Node successor1 = Node.minNode;
+                Node successor0 = Node.minNode;
                 for (Node successor : successors) {
-                    Node successor0 = Node.maxNode;
-                    System.out.println("Checking Successor " + successor.getID());
                     if (!foundSuccessor0 && Node.prefixMatch(i, node, successor, 0)) {
                         successor0 = successor;
                         foundSuccessor0 = true;
@@ -100,7 +101,6 @@ public class Main {
                         }
                     }
 
-                    Node successor1 = Node.maxNode;
                     if (!foundSuccessor1 && Node.prefixMatch(i, node, successor, 1)) {
                         successor1 = successor;
                         foundSuccessor1 = true;
@@ -111,19 +111,20 @@ public class Main {
                             return false;
                         }
                     }
+                }
 
-                    if (successor0.isGreaterThan(successor1)) {
-                        ranges[i].setEnd(successor0);
-                    } else if (successor1.isGreaterThan(successor0)) {
-                        ranges[i].setEnd(successor1);
-                    }
+                if (successor0.isGreaterThan(successor1)) {
+                    ranges[i].setEnd(successor0);
+                } else if (successor1.isGreaterThan(successor0)) {
+                    ranges[i].setEnd(successor1);
                 }
 
                 // Vorgänger bestimmen
                 boolean foundPredecessor0 = false;
                 boolean foundPredecessor1 = false;
+                Node predecessor0 = Node.minNode;
+                Node predecessor1 = Node.minNode;
                 for (Node predecessor : predecessors) {
-                    Node predecessor0 = Node.minNode;
                     if (!foundPredecessor0 && Node.prefixMatch(i, node, predecessor, 0)) {
                         foundPredecessor0 = true;
                         if (node.predecessor[i].getNodeZero() != predecessor) {
@@ -134,7 +135,6 @@ public class Main {
                         predecessor0 = predecessor;
                     }
 
-                    Node predecessor1 = Node.minNode;
                     if (!foundPredecessor1 && Node.prefixMatch(i, node, predecessor, 1)) {
                         foundPredecessor1 = true;
                         if (node.predecessor[i].getNodeOne() != predecessor) {
@@ -144,30 +144,39 @@ public class Main {
 
                         predecessor1 = predecessor;
                     }
+                }
 
-                    if (predecessor0.isLessThan(predecessor1)) {
-                        ranges[i].setBegin(predecessor0);
-                    } else if (predecessor1.isLessThan(predecessor0)) {
-                        ranges[i].setBegin(predecessor1);
-                    }
+                if (predecessor0.isLessThan(predecessor1)) {
+                    ranges[i].setBegin(predecessor0);
+                } else if (predecessor1.isLessThan(predecessor0)) {
+                    ranges[i].setBegin(predecessor1);
                 }
 
                 // vergleiche Ranges
                 if (node.range[i].getBegin() != ranges[i].getBegin()) {
                     System.out.println("Range begin is wrong");
+                    System.out.println("Level: " + i);
+                    System.out.println("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i]);
                     return false;
                 }
 
                 if (node.range[i].getEnd() != ranges[i].getEnd()) {
                     System.out.println("Range end is wrong");
+                    System.out.println("Level: " + i);
+                    System.out.println("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i]);
                     return false;
                 }
 
                 // vergleiche Nachbarschaften
                 for (Node n : nodes) {
-                    if (node.range[i].isNodeInsideRange(n) && node.prefixMatch(i, n)) {
+                    if (!n.equals(node) && node.range[i].isNodeInsideRange(n) && node.prefixMatch(i, n)) {
                         if (!node.neighbours[i].contains(n)) {
                             System.out.println("Neighbourhood is wrong");
+                            System.out.println("Level: " + i);
+                            System.out.println("Node: " + node.getID());
+                            System.out.println("Neighbourhoud");
+                            node.printNeighbourhood(i);
+                            System.out.println(" BUT should contain " + n.getID());
                             return false;
                         }
                     }

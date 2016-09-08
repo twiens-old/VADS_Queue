@@ -68,7 +68,33 @@ public class Node extends Subject implements Comparable<Node> {
         // Für jeden Level i stellt jeder Knoten u periodisch alle Knoten in N_i(u) vor, dass diese eine sortierte Liste
         // bilden
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            Iterator<Node> iterator = this.neighbours[i].iterator();
+            SortedSet<Node> nodesLessThanMe = this.neighbours[i].headSet(this);
+            TreeSet<Node> nodesLessEqualMe = new TreeSet<>(nodesLessThanMe);
+            nodesLessEqualMe.add(this);
+
+            TreeSet<Node> nodesGreaterThanMe = (TreeSet<Node>) this.neighbours[i].tailSet(this, false);
+            TreeSet<Node> nodesGreaterEqualMe = new TreeSet<>(nodesGreaterThanMe);
+            nodesGreaterEqualMe.add(this);
+
+            for (Node node : nodesLessThanMe) {
+                Node next = nodesLessEqualMe.higher(node);
+
+                node.send(next);
+            }
+
+            for (Node node : nodesGreaterEqualMe) {
+                Node next = nodesGreaterThanMe.higher(node);
+
+                if (next != null) {
+                    next.send(node);
+                }
+            }
+
+
+        }
+
+        //region Old Rule 1a
+/*            Iterator<Node> iterator = this.neighbours[i].iterator();
 
             if (iterator.hasNext()) {
                 Node current = iterator.next();
@@ -121,6 +147,8 @@ public class Node extends Subject implements Comparable<Node> {
                 }
             }
         }
+*/
+        //endregion
 
         // Regel 1b
         // Für jeden Level i stellt jeder Knoten u periodisch seinen nächsten Vorgängern und Nachfolgern den Knoten
@@ -128,8 +156,8 @@ public class Node extends Subject implements Comparable<Node> {
         // rechts von u den Vorgänger links von u kennenlernen
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            Node v = this.neighbours[i].floor(this);
-            Node w = this.neighbours[i].ceiling(this);
+            Node v = this.neighbours[i].higher(this);
+            Node w = this.neighbours[i].lower(this);
 
             if (w != null) {
                 SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
@@ -163,11 +191,6 @@ public class Node extends Subject implements Comparable<Node> {
         // zwischen u und w liegen, d.h. der ID-Bereich von (w',w) ist innerhalb des ID-Bereichs von (u,w)
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
-            if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
-                this.neighbours[i].add(v);
-            }
-
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
@@ -204,6 +227,15 @@ public class Node extends Subject implements Comparable<Node> {
                             this.updateNeighbours(i);
                     }
                 }
+            }
+
+            // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
+            if (this.getID().toString().equals("000") && v.getID().toString().equals("011")) {
+                println("HALLO RUDI " + this.range[i]);
+            }
+
+            if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
+                this.neighbours[i].add(v);
             }
         }
     }
@@ -331,6 +363,27 @@ public class Node extends Subject implements Comparable<Node> {
         println("########################################################################");
     }
 
+    public synchronized void printNeighbourhood(int i) {
+        println("########################################################################");
+
+        println("Knoten ID: " + this.getID());
+
+        print("Received Nodes: ");
+        Iterator<Node> iterator = receivedNodes.iterator();
+        while(iterator.hasNext()) {
+            print(iterator.next().getID() + ", ");
+        }
+        println("");
+
+        println("Level " + i +  "  Pred: " + this.predecessor[i] + " Succ:" + this.successor[i]);
+        for (Node neighbour : this.neighbours[i]) {
+            print("\t" + neighbour.getID() + ", ");
+        }
+        println("");
+
+        println("########################################################################");
+    }
+
     public boolean equals(Object anotherObject) {
         if (!(anotherObject instanceof Node)) {
             return false;
@@ -396,7 +449,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     public void printSendingInformation(Node sender, Node receiver, Node message) {
-        if (message.getID().toString().equals("100")) {
+        if (message.getID().toString().equals("")) {
             println("##############\nSender: " + sender.getID() + "\nReceiver: " + receiver.getID() + "\nMessage: " + message.getID() + "\n##############");
         }
     }
