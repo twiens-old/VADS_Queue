@@ -21,18 +21,29 @@ public class Pair {
     }
 
     public Node getNodeZero() {
-        if (this.nodeZero == null) {
-            return Node.nullNode;
-        }
-
         return this.nodeZero;
     }
 
     public Node getNodeOne() {
-        if (this.nodeOne == null) {
-            return Node.nullNode;
+        return this.nodeOne;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        if (this.nodeZero == null) {
+            sb.append("(null, ");
+        } else {
+            sb.append("(" + this.nodeZero.getID() + ", ");
         }
 
-        return this.nodeOne;
+        if (this.nodeOne == null) {
+            sb.append("null)");
+        } else {
+            sb.append(this.nodeOne.getID() + ")");
+        }
+
+        return sb.toString();
     }
 }

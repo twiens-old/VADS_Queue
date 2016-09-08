@@ -1,13 +1,15 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-import java.util.*;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Created by twiens, fischerr, jeromeK on 8/23/16.
  */
 public class Node extends Subject implements Comparable<Node> {
     private static final int NUMBER_OF_BITS = 3;
-    public static final Node nullNode = new Node("");
+    public static final Node minNode = new Node("");
+    public static final Node maxNode = new Node("1111");    // TODO: dynamisch erzeugen
 
     private BitSequence ID;
     private TreeSet<Node>[] neighbours;
@@ -163,7 +165,7 @@ public class Node extends Subject implements Comparable<Node> {
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
-                    if (predecessor[i].getNodeOne() == nullNode || predecessor[i].getNodeOne().isLessThan(v)) {  // prüfe ob besserer nächste Vorgänger existiert
+                    if (predecessor[i].getNodeOne() == null || predecessor[i].getNodeOne().isLessThan(v)) {  // prüfe ob besserer nächste Vorgänger existiert
                         // TODO: delgiere alten Vorgänger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         predecessor[i].setNodeOne(v);
@@ -173,7 +175,7 @@ public class Node extends Subject implements Comparable<Node> {
                 }
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
-                    if (predecessor[i].getNodeZero() == nullNode || predecessor[i].getNodeZero().isLessThan(v)) {
+                    if (predecessor[i].getNodeZero() == null || predecessor[i].getNodeZero().isLessThan(v)) {
                         // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         predecessor[i].setNodeZero(v);
@@ -186,7 +188,7 @@ public class Node extends Subject implements Comparable<Node> {
             // successors
             if (this.isLessThan(v)) {                   // überprüfe ob v Nachfolger von this
                 if (prefixMatch(i, this, v, 1)) {   // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
-                    if (successor[i].getNodeOne() == nullNode || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
+                    if (successor[i].getNodeOne() == null || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
                     // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                     successor[i].setNodeOne(v);
@@ -196,7 +198,7 @@ public class Node extends Subject implements Comparable<Node> {
                 }
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
-                    if (successor[i].getNodeZero() == nullNode || successor[i].getNodeZero().isGreaterThan(v)) {
+                    if (successor[i].getNodeZero() == null || successor[i].getNodeZero().isGreaterThan(v)) {
                         // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
 
                         successor[i].setNodeZero(v);
@@ -212,6 +214,7 @@ public class Node extends Subject implements Comparable<Node> {
         return this.ID;
     }
 
+    // range_i(v) = [min_b(pred_i(v,b)), max_b(succ_i(v,b))] b={0,1}
     private void updateRange(int i) {
         // TODO: Exceptions für fehlerhafte Ranges (z.B. Anfang > Ende)
 
@@ -228,15 +231,15 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         if (successor[i].getNodeZero() == null && successor[i].getNodeOne() != null) {
-            range[i].setBegin(successor[i].getNodeOne());
+            range[i].setEnd(successor[i].getNodeOne());
         } else if (successor[i].getNodeOne() == null && successor[i].getNodeZero() != null) {
-            range[i].setBegin(successor[i].getNodeZero());
+            range[i].setEnd(successor[i].getNodeZero());
         } else if (successor[i].getNodeZero() == null && successor[i].getNodeOne() == null) {
             // Nix machen
         } else if (successor[i].getNodeZero().isGreaterThan(successor[i].getNodeOne())) {
-            range[i].setBegin(successor[i].getNodeZero());
+            range[i].setEnd(successor[i].getNodeZero());
         } else {
-            range[i].setBegin(successor[i].getNodeOne());
+            range[i].setEnd(successor[i].getNodeOne());
         }
     }
 
@@ -267,7 +270,7 @@ public class Node extends Subject implements Comparable<Node> {
 
         StringBuilder sb = new StringBuilder();
         sb.append("########################################################################\n");
-        sb.append("Removed Neighbours in Node " + this.getID() + "\n");
+        sb.append("Removed Neighbours in Node " + this.getID() + " - Range: " + this.range[i] + "\n");
         sb.append("Level = " + i + "\n");
 
         for (Node node : removedNeighbours) {
@@ -316,10 +319,7 @@ public class Node extends Subject implements Comparable<Node> {
         println("");
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            println("Level " + i +  "(Pred0: " + this.predecessor[i].getNodeZero().getID() +
-                                    " Pred1: " + this.predecessor[i].getNodeOne().getID() +
-                                    " Succ0: " + this.successor[i].getNodeZero().getID() +
-                                    " Succ1: " + this.successor[i].getNodeOne().getID());
+            println("Level " + i +  "  Pred: " + this.predecessor[i] + " Succ:" + this.successor[i]);
             for (Node neighbour : this.neighbours[i]) {
                 print("\t" + neighbour.getID() + ", ");
             }
