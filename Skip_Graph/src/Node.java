@@ -7,15 +7,15 @@ import java.util.TreeSet;
  * Created by twiens, fischerr, jeromeK on 8/23/16.
  */
 public class Node extends Subject implements Comparable<Node> {
-    private static final int NUMBER_OF_BITS = 3;
+    public static final int NUMBER_OF_BITS = 3;
     public static final Node minNode = new Node("");
     public static final Node maxNode = new Node("1111");    // TODO: dynamisch erzeugen
 
     private BitSequence ID;
-    private TreeSet<Node>[] neighbours;
-    private Range[] range;
-    private Pair[] predecessor;
-    private Pair[] successor;
+    public TreeSet<Node>[] neighbours;
+    public Range[] range;
+    public Pair[] predecessor;
+    public Pair[] successor;
 
     private TreeSet<Node> receivedNodes = new TreeSet<>();
 
@@ -82,6 +82,7 @@ public class Node extends Subject implements Comparable<Node> {
                         break;
                     }
 
+                    this.printSendingInformation(this, current, next);
                     current.send(next);
                     current = next;
                 }
@@ -89,6 +90,7 @@ public class Node extends Subject implements Comparable<Node> {
                 current = this.neighbours[i].floor(this);
 
                 if (current != null) {
+                    this.printSendingInformation(this, current, this);
                     current.send(this);
                 }
             }
@@ -106,6 +108,7 @@ public class Node extends Subject implements Comparable<Node> {
                         break;
                     }
 
+                    this.printSendingInformation(this, current, next);
                     current.send(next);
                     current = next;
                 }
@@ -113,6 +116,7 @@ public class Node extends Subject implements Comparable<Node> {
                 current = this.neighbours[i].ceiling(this);
 
                 if (current != null) {
+                    this.printSendingInformation(this, current, this);
                     current.send(this);
                 }
             }
@@ -131,6 +135,7 @@ public class Node extends Subject implements Comparable<Node> {
                 SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
                 for (Node current : nodes_less_than_us) {
                     if (current.range[i].isNodeInsideRange(w)) {
+                        this.printSendingInformation(this, current, w);
                         current.send(w);
                     }
                 }
@@ -140,6 +145,7 @@ public class Node extends Subject implements Comparable<Node> {
                 SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(w);
                 for (Node current : nodes_greater_than_us) {
                     if (current.range[i].isNodeInsideRange(v)) {
+                        this.printSendingInformation(this, current, v);
                         current.send(v);
                     }
                 }
@@ -166,8 +172,6 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
                     if (predecessor[i].getNodeOne() == null || predecessor[i].getNodeOne().isLessThan(v)) {  // prüfe ob besserer nächste Vorgänger existiert
-                        // TODO: delgiere alten Vorgänger zu Knoten weiter mit größerer Prefixübereinstimmung
-
                         predecessor[i].setNodeOne(v);
                         this.updateRange(i);
                         this.updateNeighbours(i);
@@ -176,8 +180,6 @@ public class Node extends Subject implements Comparable<Node> {
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
                     if (predecessor[i].getNodeZero() == null || predecessor[i].getNodeZero().isLessThan(v)) {
-                        // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
-
                         predecessor[i].setNodeZero(v);
                         this.updateRange(i);
                         this.updateNeighbours(i);
@@ -189,8 +191,6 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.isLessThan(v)) {                   // überprüfe ob v Nachfolger von this
                 if (prefixMatch(i, this, v, 1)) {   // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
                     if (successor[i].getNodeOne() == null || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
-                    // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
-
                     successor[i].setNodeOne(v);
                     this.updateRange(i);
                     this.updateNeighbours(i);
@@ -199,8 +199,6 @@ public class Node extends Subject implements Comparable<Node> {
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
                     if (successor[i].getNodeZero() == null || successor[i].getNodeZero().isGreaterThan(v)) {
-                        // TODO: delgiere alten Nachfolger zu Knoten weiter mit größerer Prefixübereinstimmung
-
                         successor[i].setNodeZero(v);
                             this.updateRange(i);
                             this.updateNeighbours(i);
@@ -248,15 +246,17 @@ public class Node extends Subject implements Comparable<Node> {
         TreeSet<Node> removedNeighbours = new TreeSet<>();
 
         for (Node node : neighbours[i]) {
-            if (!range[i].isNodeInsideRange(node)) {        // TODO: Range ist falsch, Knoten wird fälschlicherweise aus Nachbarschaft entfernt
+            if (!range[i].isNodeInsideRange(node)) {
                 removedNeighbours.add(node);
                                                              // finde Knoten mit größer Präfixübereinstimmung
                 for (int j = NUMBER_OF_BITS-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
                         if (!neighbour.equals(node) && prefixMatch(j, neighbour)) {
+                            this.printSendingInformation(this, neighbour, node);
                             neighbour.send(node);
                             neighbourDelegated = true;
+
                             continue;
                         }
                     }
@@ -280,7 +280,9 @@ public class Node extends Subject implements Comparable<Node> {
 
         sb.append("\n########################################################################");
 
-        println(sb.toString());
+        if (removedNeighbours.size() > 0) {
+            println(sb.toString());
+        }
     }
 
     public boolean isGreaterThan(Node anotherNode) {
@@ -299,7 +301,7 @@ public class Node extends Subject implements Comparable<Node> {
         return this.getID().isLessThan(anotherNode.getID());
     }
 
-    private boolean prefixMatch(int i, Node anotherNode) {
+    public boolean prefixMatch(int i, Node anotherNode) {
         BitSequence thisPrefix = this.getID().getPrefix(i);
         BitSequence anotherPrefix = anotherNode.getID().getPrefix(i);
 
@@ -337,7 +339,7 @@ public class Node extends Subject implements Comparable<Node> {
         return this.getID().equals(((Node) anotherObject).getID());
     }
 
-    private static boolean prefixMatch(int i, Node firstNode, Node secondNode, int b) {
+    public static boolean prefixMatch(int i, Node firstNode, Node secondNode, int b) {
         if (i > NUMBER_OF_BITS-1) {
             throw new UnsupportedOperationException();
         }
@@ -390,6 +392,12 @@ public class Node extends Subject implements Comparable<Node> {
             return 0;
         } else {
             throw new IllegalArgumentException("Object compared to node is null.");
+        }
+    }
+
+    public void printSendingInformation(Node sender, Node receiver, Node message) {
+        if (message.getID().toString().equals("100")) {
+            println("##############\nSender: " + sender.getID() + "\nReceiver: " + receiver.getID() + "\nMessage: " + message.getID() + "\n##############");
         }
     }
 }
