@@ -93,89 +93,69 @@ public class Node extends Subject implements Comparable<Node> {
 
         }
 
-        //region Old Rule 1a
-/*            Iterator<Node> iterator = this.neighbours[i].iterator();
-
-            if (iterator.hasNext()) {
-                Node current = iterator.next();
-
-                // TODO: vielleicht nochmal schöner machen
-                Node next = null;
-                while (iterator.hasNext() && current.isLessThan(this) && this.isGreaterThan(next)) {
-                    next = iterator.next();
-
-                    if (!this.isGreaterThan(next)) {
-                        break;
-                    }
-
-                    this.printSendingInformation(this, current, next);
-                    current.send(next);
-                    current = next;
-                }
-
-                current = this.neighbours[i].floor(this);
-
-                if (current != null) {
-                    this.printSendingInformation(this, current, this);
-                    current.send(this);
-                }
-            }
-
-            iterator = this.neighbours[i].descendingIterator();
-
-            if (iterator.hasNext()) {
-                Node current = iterator.next();
-
-                Node next = null;
-                while (iterator.hasNext() && current.isGreaterThan(this) && this.isLessThan(next)) {
-                    next = iterator.next();
-
-                    if (!this.isLessThan(next)) {
-                        break;
-                    }
-
-                    this.printSendingInformation(this, current, next);
-                    current.send(next);
-                    current = next;
-                }
-
-                current = this.neighbours[i].ceiling(this);
-
-                if (current != null) {
-                    this.printSendingInformation(this, current, this);
-                    current.send(this);
-                }
-            }
-        }
-*/
-        //endregion
-
         // Regel 1b
         // Für jeden Level i stellt jeder Knoten u periodisch seinen nächsten Vorgängern und Nachfolgern den Knoten
         // v_j e N_i(v) vor, dass alle Knoten links von u den Nachfolger rechts von u kennenlernen und alle Knoten
         // rechts von u den Vorgänger links von u kennenlernen
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            Node v = this.neighbours[i].higher(this);
-            Node w = this.neighbours[i].lower(this);
+            //region Alte Version der Regel 1b
+            /*Node v = this.neighbours[i].lower(this);
+            Node w = this.neighbours[i].higher(this);
 
             if (w != null) {
                 SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
                 for (Node current : nodes_less_than_us) {
                     if (current.range[i].isNodeInsideRange(w)) {
                         this.printSendingInformation(this, current, w);
+
                         current.send(w);
                     }
                 }
             }
 
             if (v != null && w != null) {
-                SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(w);
+                SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
                 for (Node current : nodes_greater_than_us) {
                     if (current.range[i].isNodeInsideRange(v)) {
                         this.printSendingInformation(this, current, v);
+
                         current.send(v);
                     }
+                }
+            } */
+            //endregion
+
+            Node v0 = this.predecessor[i].getNodeZero();
+            Node v1 = this.predecessor[i].getNodeOne();
+            Node w0 = this.successor[i].getNodeZero();
+            Node w1 = this.successor[i].getNodeOne();
+
+            SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
+            for (Node current : nodes_less_than_us) {
+                if (w0 != null && current.range[i].isNodeInsideRange(w0)) {
+                    this.printSendingInformation(this, current, w0);
+                    current.send(w0);
+                }
+
+                if (w1 != null && current.range[i].isNodeInsideRange(w1)) {
+                    this.printSendingInformation(this, current, w1);
+                    current.send(w1);
+                }
+            }
+
+            SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
+            for (Node current : nodes_greater_than_us) {
+                if (v0 != null && current.range[i].isNodeInsideRange(v0)) {
+                    this.printSendingInformation(this, current, v0);
+
+                    current.send(v0);
+                }
+
+                if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
+                    this.printSendingInformation(this, current, v1);
+
+                    current.send(v1);
                 }
             }
         }

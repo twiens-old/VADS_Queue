@@ -29,7 +29,8 @@ public class Main {
             nodes[i] = new Node(nodesIds[i]);
         }
 
-        //nodes[2].send(nodes[7]);
+        //region alter schwacher Graph
+/*        //nodes[2].send(nodes[7]);
         //Thread.sleep(1000);
         //nodes[2].send(nodes[5]);
         nodes[0].send(nodes[1]);
@@ -40,11 +41,26 @@ public class Main {
         nodes[5].send(nodes[0]);
         nodes[5].send(nodes[4]);        // TODO: funktioniert nicht, wenn diese Kante entfernt wird ... WARUM?!?!
         nodes[0].send(nodes[3]);        // TODO:
+        nodes[1].send(nodes[4]);        // TODO:
+        nodes[2].send(nodes[4]);        // TODO:
+        nodes[4].send(nodes[6]);        // TODO:
+        nodes[5].send(nodes[3]);        // TODO:
+        nodes[0].send(nodes[4]);        // TODO:
+        nodes[6].send(nodes[3]);        // TODO:
+        nodes[7].send(nodes[3]);        // TODO:
+        nodes[7].send(nodes[4]);        // TODO:
+        nodes[7].send(nodes[5]);        // TODO:
         nodes[6].send(nodes[5]);
         nodes[6].send(nodes[7]);
         //nodes[6].send(nodes[8]);
         //nodes[9].send(nodes[8]);
-        //nodes[7].send(nodes[8]);
+        //nodes[7].send(nodes[8]); */
+        //endregion
+
+        for (int i = 0; i < n-1; i++) {
+            nodes[i].send(nodes[i+1]);
+        }
+        nodes[0].send(nodes[n-1]);
 
         for (int i = 0; i < n; i++) {
             nodes[i].start();
@@ -86,8 +102,8 @@ public class Main {
                 // Nachfolger bestimmen
                 boolean foundSuccessor0 = false;
                 boolean foundSuccessor1 = false;
-                Node successor1 = Node.minNode;
-                Node successor0 = Node.minNode;
+                Node successor1 = Node.maxNode;
+                Node successor0 = Node.maxNode;
                 for (Node successor : successors) {
                     if (!foundSuccessor0 && Node.prefixMatch(i, node, successor, 0)) {
                         successor0 = successor;
@@ -107,13 +123,24 @@ public class Main {
                         if (node.successor[i].getNodeOne() != successor) {
                             System.out.println("Successor 1 is wrong");
                             System.out.println("Level: " + i + " Node: " + node.getID());
-                            System.out.println("Successor: " + node.successor[i].getNodeOne().getID() + " BUT should be " + successor.getID());
+                            if (node.successor[i].getNodeOne() != null) {
+                                System.out.println("Successor: " + node.successor[i].getNodeOne().getID() + " BUT should be " + successor.getID());
+                            } else {
+                                System.out.println("Successor: is null BUT should be " + successor.getID());
+                            }
+
                             return false;
                         }
                     }
                 }
 
-                if (successor0.isGreaterThan(successor1)) {
+                if (successor0.equals(Node.maxNode) && !successor1.equals(Node.maxNode)) {
+                    ranges[i].setEnd(successor1);
+                } else if (!successor0.equals(Node.maxNode) && successor1.equals(Node.maxNode)) {
+                    ranges[i].setEnd(successor0);
+                } else if (successor0.equals(Node.maxNode) && successor1.equals(Node.maxNode)) {
+                    ranges[i].setEnd(successor0);
+                } else if (successor0.isGreaterThan(successor1)) {
                     ranges[i].setEnd(successor0);
                 } else if (successor1.isGreaterThan(successor0)) {
                     ranges[i].setEnd(successor1);
@@ -129,6 +156,13 @@ public class Main {
                         foundPredecessor0 = true;
                         if (node.predecessor[i].getNodeZero() != predecessor) {
                             System.out.println("Predecessor 0 is wrong");
+                            System.out.println("Level: " + i + " Node: " + node.getID());
+                            if (node.predecessor[i].getNodeZero() != null) {
+                                System.out.println("Predecessor: " + node.predecessor[i].getNodeZero().getID() + " BUT should be " + predecessor.getID());
+                            } else {
+                                System.out.println("Predecessor: is null BUT should be " + predecessor.getID());
+                            }
+
                             return false;
                         }
 
@@ -146,7 +180,13 @@ public class Main {
                     }
                 }
 
-                if (predecessor0.isLessThan(predecessor1)) {
+                if (predecessor0.equals(Node.minNode) && !predecessor1.equals(Node.minNode)) {
+                    ranges[i].setBegin(predecessor1);
+                } else if (!predecessor0.equals(Node.minNode) && predecessor1.equals(Node.minNode)) {
+                    ranges[i].setBegin(predecessor0);
+                } else if (predecessor0.equals(Node.minNode) && predecessor1.equals(Node.minNode)) {
+                    ranges[i].setBegin(predecessor0);
+                } else if (predecessor0.isLessThan(predecessor1)) {
                     ranges[i].setBegin(predecessor0);
                 } else if (predecessor1.isLessThan(predecessor0)) {
                     ranges[i].setBegin(predecessor1);
