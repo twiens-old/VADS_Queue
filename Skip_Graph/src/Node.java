@@ -1,4 +1,3 @@
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -122,6 +121,11 @@ public class Node extends Subject implements Comparable<Node> {
      */
     @Override
     protected void onTimeout() {
+        this.linearizeRule1a();
+        this.bridgeRule1b();
+    }
+
+    private void linearizeRule1a() {
         // Regel 1a
         // Für jeden Level i stellt jeder Knoten u periodisch alle Knoten in N_i(u) vor, dass diese eine sortierte Liste
         // bilden
@@ -147,7 +151,9 @@ public class Node extends Subject implements Comparable<Node> {
                 }
             }
         }
+    }
 
+    private void bridgeRule1b() {
         // Regel 1b
         // Für jeden Level i stellt jeder Knoten u periodisch seinen nächsten Vorgängern und Nachfolgern den Knoten
         // v_j e N_i(v) vor, dass alle Knoten links von u den Nachfolger rechts von u kennenlernen und alle Knoten
@@ -183,6 +189,17 @@ public class Node extends Subject implements Comparable<Node> {
                 if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
                     this.printSendingInformation(this, current, v1);
                     current.send(v1);
+                }
+            }
+        }
+    }
+
+    private void introduceAllNeighboursAtLevelToEachOther(int i) {
+        for (Node node1 : this.neighbours[i]) {
+            for (Node node2 : this.neighbours[i]) {
+                if (!node1.equals(node2)) {
+                    node1.send(node2);
+                    node2.send(node1);
                 }
             }
         }
@@ -240,15 +257,9 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
+                    v.send(this);
 
-                    for (Node node1 : this.neighbours[i]) {
-                        for (Node node2 : this.neighbours[i]) {
-                            if (!node1.equals(node2)) {
-                                node1.send(node2);
-                                node2.send(node1);
-                            }
-                        }
-                    }
+                    this.introduceAllNeighboursAtLevelToEachOther(i);
                 }
             }
         }

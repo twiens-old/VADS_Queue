@@ -11,6 +11,10 @@ public class SkipPlusGraph {
 
     private ArrayList<Node> nodes;
 
+    /**
+     * Constructor for creating a new instance of the {@link SkipPlusGraph}
+     * @param numberOfBits
+     */
     public SkipPlusGraph(int numberOfBits) {
         this.numberOfBits = numberOfBits;
         nodes = new ArrayList<>();
