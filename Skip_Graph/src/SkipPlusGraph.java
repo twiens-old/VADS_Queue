@@ -32,6 +32,7 @@ public class SkipPlusGraph {
         // if there are other nodes contained in the graph, the joining node has to be send to one of these nodes
         if (nodes.size() > 0) {
             int responsibleNodePosition = randInt(0, nodes.size() - 1);
+            //int responsibleNodePosition = 0;
 
             nodes.get(responsibleNodePosition).send(node);
         }

@@ -5,13 +5,13 @@ import java.util.*;
  */
 public class UniqueRandomBitStringGenerator {
 
-    private static ArrayList<BitSequence> _uniqueBitStrings = new ArrayList<>();
+    private static ArrayList<BitSequence> uniqueBitStrings = new ArrayList<>();
 
-    private static List<BitSequence> _synchronizedList = Collections.synchronizedList(_uniqueBitStrings);
+    private static List<BitSequence> synchronizedList = Collections.synchronizedList(uniqueBitStrings);
 
     private static final Random _random = new Random();
 
-    public static BitSequence GenerateUniqueRandomBitSet(int lengthOfBitString) {
+    public static BitSequence generateUniqueRandomBitSequence(int lengthOfBitString) {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < lengthOfBitString; i++) {
@@ -24,7 +24,7 @@ public class UniqueRandomBitStringGenerator {
 
         BitSequence resultingBitSequence = new BitSequence(sb.toString());
 
-        while (_synchronizedList.contains(resultingBitSequence)) {
+        while (synchronizedList.contains(resultingBitSequence)) {
             sb = new StringBuilder();
 
             for (int i = 0; i < lengthOfBitString; i++) {
@@ -34,11 +34,13 @@ public class UniqueRandomBitStringGenerator {
                     sb.append("0");
                 }
             }
+
+            resultingBitSequence = new BitSequence(sb.toString());
         }
 
         resultingBitSequence = new BitSequence(sb.toString());
 
-        _synchronizedList.add(resultingBitSequence);
+        synchronizedList.add(resultingBitSequence);
 
         return resultingBitSequence;
     }

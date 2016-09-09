@@ -64,7 +64,7 @@ public class Node extends Subject implements Comparable<Node> {
      * Constructor. Creates a new node with a random, but unique id.
      */
     public Node() {
-        this.ID = UniqueRandomBitStringGenerator.GenerateUniqueRandomBitSet(NUMBER_OF_BITS);
+        this.ID = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(NUMBER_OF_BITS);
         this.neighbours = new TreeSet[NUMBER_OF_BITS];
         this.range = new Range[NUMBER_OF_BITS];
         this.predecessor = new Pair[NUMBER_OF_BITS];
@@ -254,6 +254,11 @@ public class Node extends Subject implements Comparable<Node> {
             }
 
             // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
+
+            if (this.getID().toString().equals("000") && v.getID().toString().equals("011")) {
+                println("Level i = " + i + " \t Range " + this.range[i]);
+            }
+
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
@@ -344,22 +349,6 @@ public class Node extends Subject implements Comparable<Node> {
                     }
                 }
             }
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("########################################################################\n");
-        sb.append("Removed Neighbours in Node " + this.getID() + " - Range: " + this.range[i] + "\n");
-        sb.append("Level = " + i + "\n");
-
-        for (Node node : removedNeighbours) {
-            this.neighbours[i].remove(node);
-            sb.append(node.getID() + ", ");
-        }
-
-        sb.append("\n########################################################################");
-
-        if (removedNeighbours.size() > 0) {
-            println(sb.toString());
         }
     }
 
