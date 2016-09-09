@@ -6,21 +6,66 @@ import java.util.TreeSet;
 /**
  * Created by twiens, fischerr, jeromeK on 8/23/16.
  */
+
+/**
+ * Represents a node of the Skip+ graph.
+ * @author twiens, fischerr, jeromeK
+ * @version 0.1
+ */
 public class Node extends Subject implements Comparable<Node> {
+
+    /**
+     * Machen wir in die skip graph klasse.
+     */
     public static final int NUMBER_OF_BITS = 3;
+
+    /**
+     * Node with lowest possible id.
+     */
     public static final Node minNode = new Node("");
+
+    /**
+     * Node with the highest possible id.
+     */
     public static final Node maxNode = new Node("1111");    // TODO: dynamisch erzeugen
 
+    /**
+     * Identification bit sequence of the node. (id)
+     */
     private BitSequence ID;
+
+    /**
+     * Array that contains the level-i-neighbours of the node at index i.
+     */
     public TreeSet<Node>[] neighbours;
+
+    /**
+     * Array that contains the level-i-range of the node at index i.
+     */
     public Range[] range;
+
+    /**
+     * Array that contains the level-i-predecessors of the node at index i.
+     */
     public Pair[] predecessor;
+
+    /**
+     * Array that contains the level-i-predecessors of the node at index i.
+     */
     public Pair[] successor;
 
+    /**
+     * Contains all the nodes received by messages.
+     */
     private TreeSet<Node> receivedNodes = new TreeSet<>();
 
+
+
+    /**
+     * Constructor. Creates a new node with a random, but unique id.
+     */
     public Node() {
-        this.ID = UniqueRandomBitStringGenerator.GenerateUniqueRandomBitSet(this.NUMBER_OF_BITS);
+        this.ID = UniqueRandomBitStringGenerator.GenerateUniqueRandomBitSet(NUMBER_OF_BITS);
         this.neighbours = new TreeSet[NUMBER_OF_BITS];
         this.range = new Range[NUMBER_OF_BITS];
         this.predecessor = new Pair[NUMBER_OF_BITS];
@@ -34,6 +79,10 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    /**
+     * Constructor. Creates a new node with a specific id.
+     * @param sequence The id as bit sequence.
+     */
     public Node (String sequence) {
         this.ID = new BitSequence(sequence);
         this.neighbours = new TreeSet[NUMBER_OF_BITS];
@@ -49,11 +98,17 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void init() {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onMessageReceived(Object message) {
         if (message instanceof Node) {
@@ -62,6 +117,9 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void onTimeout() {
         // Regel 1a
@@ -96,32 +154,6 @@ public class Node extends Subject implements Comparable<Node> {
         // rechts von u den Vorgänger links von u kennenlernen
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            //region Alte Version der Regel 1b
-            /*Node v = this.neighbours[i].lower(this);
-            Node w = this.neighbours[i].higher(this);
-
-            if (w != null) {
-                SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
-                for (Node current : nodes_less_than_us) {
-                    if (current.range[i].isNodeInsideRange(w)) {
-                        this.printSendingInformation(this, current, w);
-
-                        current.send(w);
-                    }
-                }
-            }
-
-            if (v != null && w != null) {
-                SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
-                for (Node current : nodes_greater_than_us) {
-                    if (current.range[i].isNodeInsideRange(v)) {
-                        this.printSendingInformation(this, current, v);
-
-                        current.send(v);
-                    }
-                }
-            } */
-            //endregion
 
             Node v0 = this.predecessor[i].getNodeZero();
             Node v1 = this.predecessor[i].getNodeOne();
@@ -145,13 +177,11 @@ public class Node extends Subject implements Comparable<Node> {
             for (Node current : nodes_greater_than_us) {
                 if (v0 != null && current.range[i].isNodeInsideRange(v0)) {
                     this.printSendingInformation(this, current, v0);
-
                     current.send(v0);
                 }
 
                 if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
                     this.printSendingInformation(this, current, v1);
-
                     current.send(v1);
                 }
             }
@@ -224,20 +254,33 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    /**
+     * Returns the id of the node.
+     * @return
+     */
     public BitSequence getID() {
         return this.ID;
     }
 
-    // range_i(v) = [min_b(pred_i(v,b)), max_b(succ_i(v,b))] b={0,1}
+    // TODO: Exceptions für fehlerhafte Ranges (z.B. Anfang > Ende)
+    /**
+     * Checks and updates the range at level i if it is not valid.
+     * The valid range of level i is:
+     *     range_i(v) = [min_b(pred_i(v,b)), max_b(succ_i(v,b))], b={0,1}
+     * This method is called after a successor or predecessor of the node changed.
+     * @param i The level of range to check and update.
+     */
     private void updateRange(int i) {
-        // TODO: Exceptions für fehlerhafte Ranges (z.B. Anfang > Ende)
+        if (i < 0 || i > NUMBER_OF_BITS) {
+            throw new IllegalArgumentException("Level i not legal");
+        }
 
         if (predecessor[i].getNodeZero() == null && predecessor[i].getNodeOne() != null) {
             range[i].setBegin(predecessor[i].getNodeOne());
         } else if (predecessor[i].getNodeOne() == null && predecessor[i].getNodeZero() != null) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else if (predecessor[i].getNodeZero() == null && predecessor[i].getNodeOne() == null) {
-            // Nix machen
+            // do nothing
         } else if (predecessor[i].getNodeZero().isLessThan(predecessor[i].getNodeOne())) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else {
@@ -249,7 +292,7 @@ public class Node extends Subject implements Comparable<Node> {
         } else if (successor[i].getNodeOne() == null && successor[i].getNodeZero() != null) {
             range[i].setEnd(successor[i].getNodeZero());
         } else if (successor[i].getNodeZero() == null && successor[i].getNodeOne() == null) {
-            // Nix machen
+            // do nothing
         } else if (successor[i].getNodeZero().isGreaterThan(successor[i].getNodeOne())) {
             range[i].setEnd(successor[i].getNodeZero());
         } else {
@@ -258,13 +301,21 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     // TODO: think about better naming
+    /**
+     * Updates the level-i-neighbours of the node. Every neighbour that
+     * is not inside the range at level i will be removed from the neighbourhood
+     * at this level and delegated to the node with biggest matching prefix known.
+     * This method is called after a successor or predecessor of the node changed.
+     * @param i The level of the skip+ graph.
+     */
     private void updateNeighbours(int i) {
         TreeSet<Node> removedNeighbours = new TreeSet<>();
 
         for (Node node : neighbours[i]) {
             if (!range[i].isNodeInsideRange(node)) {
                 removedNeighbours.add(node);
-                                                             // finde Knoten mit größer Präfixübereinstimmung
+
+                // Find the node with biggest matching prefix.
                 for (int j = NUMBER_OF_BITS-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
@@ -301,6 +352,11 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    /**
+     * Checks if this node is greater than another node (more specific, it compares the IDs).
+     * @param anotherNode
+     * @return true, if this node is strictly greater. false, if not.
+     */
     public boolean isGreaterThan(Node anotherNode) {
         if (anotherNode == null) {
             return true;
@@ -309,6 +365,11 @@ public class Node extends Subject implements Comparable<Node> {
         return this.getID().isGreaterThan(anotherNode.getID());
     }
 
+    /**
+     * Checks if this node is smaller than another node (more specific, it compares the IDs).
+     * @param anotherNode
+     * @return true, if this node is strictly less. false, if not.
+     */
     public boolean isLessThan(Node anotherNode) {
         if (anotherNode == null) {
             return true;
@@ -317,6 +378,24 @@ public class Node extends Subject implements Comparable<Node> {
         return this.getID().isLessThan(anotherNode.getID());
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object anotherObject) {
+        if (!(anotherObject instanceof Node)) {
+            return false;
+        }
+
+        return this.getID().equals(((Node) anotherObject).getID());
+    }
+
+    /**
+     * Compares the prefixes of this node to another node.
+     * @param i Length of prefix to compare.
+     * @param anotherNode
+     * @return
+     */
     public boolean prefixMatch(int i, Node anotherNode) {
         BitSequence thisPrefix = this.getID().getPrefix(i);
         BitSequence anotherPrefix = anotherNode.getID().getPrefix(i);
@@ -368,14 +447,6 @@ public class Node extends Subject implements Comparable<Node> {
         println("########################################################################");
     }
 
-    public boolean equals(Object anotherObject) {
-        if (!(anotherObject instanceof Node)) {
-            return false;
-        }
-
-        return this.getID().equals(((Node) anotherObject).getID());
-    }
-
     public static boolean prefixMatch(int i, Node firstNode, Node secondNode, int b) {
         if (i > NUMBER_OF_BITS-1) {
             throw new UnsupportedOperationException();
@@ -391,28 +462,6 @@ public class Node extends Subject implements Comparable<Node> {
         BitSequence secondId = secondNode.getID().getPrefix(i+1);
 
         return firstId.equals(secondId);
-    }
-
-    private static int convertBitSetToInt(BitSet bits) {
-        int value = 0;
-        for (int i = 0; i < bits.length(); ++i) {
-            value += bits.get(i) ? (1 << i) : 0;
-        }
-        return value;
-    }
-
-    private static String convertBitSetToString(BitSet bitSet) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
-            if (bitSet.get(i)) {
-                sb.insert(0, 1);
-            } else {
-                sb.insert(0, 0);
-            }
-        }
-
-        return sb.toString();
     }
 
     @Override
