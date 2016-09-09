@@ -78,7 +78,6 @@ public class Node extends Subject implements Comparable<Node> {
 
             for (Node node : nodesLessThanMe) {
                 Node next = nodesLessEqualMe.higher(node);
-
                 node.send(next);
             }
 
@@ -89,8 +88,6 @@ public class Node extends Subject implements Comparable<Node> {
                     next.send(node);
                 }
             }
-
-
         }
 
         // Regel 1b
@@ -210,12 +207,19 @@ public class Node extends Subject implements Comparable<Node> {
             }
 
             // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
-            if (this.getID().toString().equals("000") && v.getID().toString().equals("011")) {
-                println("HALLO RUDI " + this.range[i]);
-            }
-
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
-                this.neighbours[i].add(v);
+                if (!this.neighbours[i].contains(v)) {
+                    this.neighbours[i].add(v);
+
+                    for (Node node1 : this.neighbours[i]) {
+                        for (Node node2 : this.neighbours[i]) {
+                            if (!node1.equals(node2)) {
+                                node1.send(node2);
+                                node2.send(node1);
+                            }
+                        }
+                    }
+                }
             }
         }
     }

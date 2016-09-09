@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -10,23 +11,22 @@ public class Main {
         //    Node tempNode = new Node();
         //}
 
-        int n = 8;
-
-        Node[] nodes = new Node[n];
-
         String[] nodesIds = new String[]{
             "000",
             "001",
             "010",
             "011",
-            "100",
             "101",
             "110",
             "111",
         };
 
+        int n = nodesIds.length;
+
+        ArrayList<Node> nodes = new ArrayList<>();
+
         for (int i = 0; i < n; i++) {
-            nodes[i] = new Node(nodesIds[i]);
+            nodes.add(new Node(nodesIds[i]));
         }
 
         //region alter schwacher Graph
@@ -58,30 +58,39 @@ public class Main {
         //endregion
 
         for (int i = 0; i < n-1; i++) {
-            nodes[i].send(nodes[i+1]);
+            nodes.get(i).send(nodes.get(i+1));
         }
-        nodes[0].send(nodes[n-1]);
+        nodes.get(0).send(nodes.get(n-1));
 
         for (int i = 0; i < n; i++) {
-            nodes[i].start();
+            nodes.get(i).start();
         }
 
         // 3 sekunden laufen lassen
         Thread.sleep(3000);
 
+        Node newNode = new Node("100");
+        newNode.start();
+        nodes.get(6).send(newNode);
+        nodes.add(newNode);
+        n = nodes.size();
+
+        // 3 sekunden laufen lassen
+        Thread.sleep(3000);
+
         for (int i = 0; i < n; i++) {
-            nodes[i].stopSubject();
+            nodes.get(i).stopSubject();
         }
 
         for (int i = 0; i < n; i++) {
-            nodes[i].printNeighbourhood();
+            nodes.get(i).printNeighbourhood();
         }
 
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         System.out.println("Ergebnis = " + testSkipGraph(nodes));
     }
 
-    private static boolean testSkipGraph(Node[] nodes) {
+    private static boolean testSkipGraph(ArrayList<Node> nodes) {
         TreeSet<Node> treeSet = new TreeSet<>();
         for (Node node : nodes) {
             treeSet.add(node);
