@@ -214,6 +214,7 @@ public class Node extends Subject implements Comparable<Node> {
         // den Knoten w', zu dem w delegiert wird. Solch ein Knoten existiert immer, da w !e range_i(u), und er muss
         // zwischen u und w liegen, d.h. der ID-Bereich von (w',w) ist innerhalb des ID-Bereichs von (u,w)
 
+        boolean temporary = true;
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
@@ -222,6 +223,14 @@ public class Node extends Subject implements Comparable<Node> {
                         predecessor[i].setNodeOne(v);
                         this.updateRange(i);
                         this.updateNeighbours(i);
+
+                        if (!this.neighbours[i].contains(v)) {
+                            this.neighbours[i].add(v);
+                            v.send(this);
+
+                            this.introduceAllNeighboursAtLevelToEachOther(i);
+                            temporary = false;
+                        }
                     }
                 }
 
@@ -230,6 +239,14 @@ public class Node extends Subject implements Comparable<Node> {
                         predecessor[i].setNodeZero(v);
                         this.updateRange(i);
                         this.updateNeighbours(i);
+
+                        if (!this.neighbours[i].contains(v)) {
+                            this.neighbours[i].add(v);
+                            v.send(this);
+
+                            this.introduceAllNeighboursAtLevelToEachOther(i);
+                            temporary = false;
+                        }
                     }
                 }
             }
@@ -238,35 +255,53 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.isLessThan(v)) {                   // überprüfe ob v Nachfolger von this
                 if (prefixMatch(i, this, v, 1)) {   // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
                     if (successor[i].getNodeOne() == null || successor[i].getNodeOne().isGreaterThan(v)) {  // prüfe ob besserer nächste Nachfolger existiert
-                    successor[i].setNodeOne(v);
-                    this.updateRange(i);
-                    this.updateNeighbours(i);
+                        successor[i].setNodeOne(v);
+                        this.updateRange(i);
+                        this.updateNeighbours(i);
+
+                        if (!this.neighbours[i].contains(v)) {
+                            this.neighbours[i].add(v);
+                            v.send(this);
+
+                            this.introduceAllNeighboursAtLevelToEachOther(i);
+                            temporary = false;
+                        }
                     }
                 }
 
                 if (prefixMatch(i, this, v, 0)) {          // prüfe ob prefix_i konkateniert mit 0 mit id(v) übereinstimmt
                     if (successor[i].getNodeZero() == null || successor[i].getNodeZero().isGreaterThan(v)) {
                         successor[i].setNodeZero(v);
-                            this.updateRange(i);
-                            this.updateNeighbours(i);
+                        this.updateRange(i);
+                        this.updateNeighbours(i);
+
+                        if (!this.neighbours[i].contains(v)) {
+                            this.neighbours[i].add(v);
+                            v.send(this);
+
+                            this.introduceAllNeighboursAtLevelToEachOther(i);
+                            temporary = false;
+                        }
                     }
                 }
             }
 
             // fügt Knoten in die Nachbarschaft ein, falls Prefix gleich und inerhalb des Ranges
 
-            if (this.getID().toString().equals("000") && v.getID().toString().equals("011")) {
-                println("Level i = " + i + " \t Range " + this.range[i]);
-            }
-
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
                     v.send(this);
 
-                    this.introduceAllNeighboursAtLevelToEachOther(i);
+                    this.introduceAllNeighboursAtLevelToEachOther(i);       // Nötig
+                    temporary = false;
                 }
             }
+        }
+
+        Node largestCommonPrefixNode = this.getNodeWithLargestCommonPrefix(v);
+        if (temporary && largestCommonPrefixNode != null) {
+            largestCommonPrefixNode.send(v);        // Nötig
         }
     }
 
@@ -376,6 +411,26 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         return this.getID().isLessThan(anotherNode.getID());
+    }
+
+    public Node getNodeWithLargestCommonPrefix(Node node) {
+        TreeSet<Node> neighboursFromAllLevels = new TreeSet<>();
+
+        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+            for (Node neighbour : neighbours[i]) {
+                neighboursFromAllLevels.add(neighbour);
+            }
+        }
+
+        for (int i = NUMBER_OF_BITS-1; i >= 0; i--) {
+            for (Node neighbour : neighboursFromAllLevels) {
+                if (neighbour.prefixMatch(i, node)) {
+                    return neighbour;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
