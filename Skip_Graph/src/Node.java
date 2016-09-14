@@ -32,6 +32,8 @@ public class Node extends Subject implements Comparable<Node> {
      */
     public TreeSet<Node>[] neighbours;
 
+    public TreeSet<Node> neighboursForBiDirection;
+
     /**
      * Array that contains the level-i-range of the node at index i.
      */
@@ -52,7 +54,7 @@ public class Node extends Subject implements Comparable<Node> {
      */
     private TreeSet<Node> receivedNodes = new TreeSet<>();
 
-
+    private TreeSet<Node> leavingNodes = new TreeSet<>();
 
     /**
      * Constructor. Creates a new node with a random, but unique id.
@@ -63,6 +65,8 @@ public class Node extends Subject implements Comparable<Node> {
         this.range = new Range[NUMBER_OF_BITS];
         this.predecessor = new Pair[NUMBER_OF_BITS];
         this.successor = new Pair[NUMBER_OF_BITS];
+
+        this.neighboursForBiDirection = new TreeSet<>();
 
         for (int i = 0; i < NUMBER_OF_BITS; i++) {
             this.predecessor[i] = new Pair();
@@ -82,6 +86,8 @@ public class Node extends Subject implements Comparable<Node> {
         this.range = new Range[sequence.length()];
         this.predecessor = new Pair[sequence.length()];
         this.successor = new Pair[sequence.length()];
+
+        this.neighboursForBiDirection = new TreeSet<>();
 
         for (int i = 0; i < sequence.length(); i++) {
             this.predecessor[i] = new Pair();
@@ -108,6 +114,16 @@ public class Node extends Subject implements Comparable<Node> {
             this.receivedNodes.add((Node) message);
             this.linearize((Node) message);
         }
+
+        if (message instanceof Message) {   // TODO: annahme : leave message
+            if (((Message) message).message.equals("leave")) {
+                this.handleLeave(((Message) message).node);;
+            } else if (((Message) message).message.equals("force")) {
+                this.neighboursForBiDirection.add(((Message) message).node);
+            } else if (((Message) message).message.equals("force delete")) {
+                this.neighboursForBiDirection.remove(((Message) message).node);
+            }
+        }
     }
 
     /**
@@ -117,6 +133,12 @@ public class Node extends Subject implements Comparable<Node> {
     protected void onTimeout() {
         this.linearizeRule1a();
         this.bridgeRule1b();
+
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            for (Node neighbour : neighbours[i]) {
+                neighbour.send(this);
+            }
+        }
     }
 
     private void linearizeRule1a() {
@@ -217,8 +239,8 @@ public class Node extends Subject implements Comparable<Node> {
         // den Knoten w', zu dem w delegiert wird. Solch ein Knoten existiert immer, da w !e range_i(u), und er muss
         // zwischen u und w liegen, d.h. der ID-Bereich von (w',w) ist innerhalb des ID-Bereichs von (u,w)
 
-        if (v.equals(this)) {
-            return;             // TOOD: think of a better way to do that
+        if (this.leavingNodes.contains(v)) {
+            return;
         }
 
         boolean temporary = true;
@@ -234,7 +256,7 @@ public class Node extends Subject implements Comparable<Node> {
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
 
-                            v.send(this);
+                            v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -250,7 +272,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
+                            v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -269,7 +291,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
+                            v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -285,7 +307,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
+                            v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -339,7 +361,7 @@ public class Node extends Subject implements Comparable<Node> {
         } else if (predecessor[i].getNodeOne() == null && predecessor[i].getNodeZero() != null) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else if (predecessor[i].getNodeZero() == null && predecessor[i].getNodeOne() == null) {
-            // do nothing
+            range[i].setBegin(minNode);
         } else if (predecessor[i].getNodeZero().isLessThan(predecessor[i].getNodeOne())) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else {
@@ -351,7 +373,7 @@ public class Node extends Subject implements Comparable<Node> {
         } else if (successor[i].getNodeOne() == null && successor[i].getNodeZero() != null) {
             range[i].setEnd(successor[i].getNodeZero());
         } else if (successor[i].getNodeZero() == null && successor[i].getNodeOne() == null) {
-            // do nothing
+            range[i].setEnd(maxNode);
         } else if (successor[i].getNodeZero().isGreaterThan(successor[i].getNodeOne())) {
             range[i].setEnd(successor[i].getNodeZero());
         } else {
@@ -373,6 +395,7 @@ public class Node extends Subject implements Comparable<Node> {
         for (Node node : neighbours[i]) {
             if (!range[i].isNodeInsideRange(node)) {
                 removedNeighbours.add(node);
+                node.send(new Message(this, "force delete"));
 
                 // Find the node with biggest matching prefix.
                 for (int j = this.getID().toString().length()-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
@@ -444,6 +467,53 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         return null;
+    }
+
+    public void leave() {
+        TreeSet<Node> allNeighbours = new TreeSet<>();
+
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            allNeighbours.addAll(neighbours[i]);
+        }
+        allNeighbours.addAll(neighboursForBiDirection);
+
+        for (Node neighbour : allNeighbours) {
+            neighbour.send(new Message(this, "leave"));
+        }
+    }
+
+    public void handleLeave(Node leavingNode) {     // TODO: behandle Fall, falls Knoten wieder joinen möchte
+        println("Node: " + this.getID() + " Received Leaving Node Request from Node " + leavingNode.getID());
+
+        this.leavingNodes.add(leavingNode);
+
+        // gebe den Unmittelbaren Nachbarn bescheid, dass diese die Referenzen auf einen Löschen sollen
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            if (this.predecessor[i].getNodeZero() != null && this.predecessor[i].getNodeZero().equals(leavingNode)) {
+                System.out.println("Node = " + this.getID() + " Leaving: Set pred0 to minNode");
+                this.predecessor[i].setNodeZero(null);
+            }
+
+            if (this.predecessor[i].getNodeOne() != null && this.predecessor[i].getNodeOne().equals(leavingNode)) {
+                System.out.println("Node = " + this.getID() + " Leaving: Set pred1 to minNode");
+                this.predecessor[i].setNodeOne(null);
+            }
+
+            if (this.successor[i].getNodeZero() != null && this.successor[i].getNodeZero().equals(leavingNode)) {
+                System.out.println("Node = " + this.getID() + " Leaving: Set succ0 to maxNode");
+                this.successor[i].setNodeZero(null);
+            }
+
+            if (this.successor[i].getNodeOne() != null && this.successor[i].getNodeOne().equals(leavingNode)) {
+                System.out.println("Node = " + this.getID() + " Leaving: Set succ1 to maxNode");
+                this.successor[i].setNodeOne(null);
+            }
+            
+            this.neighbours[i].remove(leavingNode);
+            this.updateRange(i);
+        }
+
+        this.neighboursForBiDirection.remove(leavingNode);
     }
 
     /**

@@ -17,9 +17,11 @@ public class Main {
     }
 
     private static boolean testLauf() throws InterruptedException{
-        int numberOfNodes = 20;
+        UniqueRandomBitStringGenerator.ResetBitStrings();
 
-        int numberOfBits = 10;
+        int numberOfNodes = 8;
+
+        int numberOfBits = 3;
 
         SkipPlusGraph graph = new SkipPlusGraph(numberOfBits);
         Node[] nodes = new Node[(int) Math.pow(2, numberOfBits)];
@@ -48,22 +50,41 @@ public class Main {
 
         for (int i = 0; i < numberOfNodes; i++) {
             graph.join(nodes[i]);
-            Thread.sleep(1000);
+            Thread.sleep(500);
         }
 
         // 3 sekunden laufen lassen
-        Thread.sleep(5000);
-
-        for (int i = 0; i < numberOfNodes; i++) {
-            nodes[i].stopSubject();
-        }
+        Thread.sleep(2000);
 
         System.out.println("");
         graph.printNeighbourHoodForAllLevels();
         System.out.println("");
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
-        System.out.println("################ Ergebnis = " + result + " ################");
+        System.out.println("################ 1. Ergebnis = " + result + " ################");
+
+        graph.leave(nodes[2]);
+        Thread.sleep(1000);
+//        graph.leave(nodes[6]);
+//        Thread.sleep(1000);
+//        graph.leave(nodes[7]);
+//        Thread.sleep(1000);
+        System.out.println("Leaving Nodes: " + nodes[2].getID() + ", " + nodes[6].getID() + ", " + nodes[7].getID());
+
+        Thread.sleep(2000);
+
+        System.out.println("");
+        graph.printNeighbourHoodForAllLevels();
+        System.out.println("");
+        System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
+        result = graph.testSkipPlusGraph();
+        System.out.println("################ 2. Ergebnis = " + result + " ################");
+
+        for (int i = 0; i < numberOfNodes; i++) {
+            if (nodes[i] != null) {
+                nodes[i].stopSubject();
+            }
+        }
 
         return result;
     }

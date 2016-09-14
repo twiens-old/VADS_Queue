@@ -7,6 +7,8 @@ import java.util.TreeSet;
  * Created by twiens on 9/9/16.
  */
 public class SkipPlusGraph {
+
+
     public final int numberOfBits;
 
     private ArrayList<Node> nodes;
@@ -45,28 +47,7 @@ public class SkipPlusGraph {
             throw new IllegalArgumentException("The node removed from skip graph cannot be null.");
         }
 
-        // gebe den Unmittelbaren Nachbarn bescheid, dass diese die Referenzen auf einen Löschen sollen
-        for (int i = 0; i < numberOfBits; i++) {
-            for (Node neighbour : node.neighbours[i]) {
-                neighbour.neighbours[i].remove(node);
-
-                if (neighbour.predecessor[i].getNodeZero() != null && neighbour.predecessor[i].getNodeZero().equals(node)) {
-                    neighbour.predecessor[i].setNodeZero(null);
-                }
-
-                if (neighbour.predecessor[i].getNodeOne() != null && neighbour.predecessor[i].getNodeOne().equals(node)) {
-                    neighbour.predecessor[i].setNodeOne(null);
-                }
-
-                if (neighbour.successor[i].getNodeZero() != null && neighbour.successor[i].getNodeZero().equals(node)) {
-                    neighbour.successor[i].setNodeZero(null);
-                }
-
-                if (neighbour.successor[i].getNodeOne() != null && neighbour.successor[i].getNodeOne().equals(node)) {
-                    neighbour.successor[i].setNodeOne(null);
-                }
-            }
-        }
+        node.leave();
 
         if (node.isAlive()) {
             node.stopSubject();

@@ -44,4 +44,8 @@ public class UniqueRandomBitStringGenerator {
 
         return resultingBitSequence;
     }
+
+    public static void ResetBitStrings() {
+        synchronizedList.clear();
+    }
 }
