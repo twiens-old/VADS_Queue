@@ -255,7 +255,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-
+                            v.send(this);
                             v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
@@ -272,6 +272,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
+                            v.send(this);
                             v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
@@ -291,6 +292,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
+                            v.send(this);
                             v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
@@ -307,6 +309,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
+                            v.send(this);
                             v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
