@@ -7,7 +7,7 @@ import java.util.TreeSet;
  * Created by twiens on 9/9/16.
  */
 public class SkipPlusGraph {
-    private final int numberOfBits;
+    public final int numberOfBits;
 
     private ArrayList<Node> nodes;
 
@@ -95,8 +95,8 @@ public class SkipPlusGraph {
             SortedSet<Node> predecessors = treeSet.headSet(node, false).descendingSet();    // invertiere die Menge, damit nächster Vorgänger
             // vorne ist
 
-            Range[] ranges = new Range[Node.NUMBER_OF_BITS];
-            for (int i = 0; i < Node.NUMBER_OF_BITS; i++) {
+            Range[] ranges = new Range[this.numberOfBits];
+            for (int i = 0; i < this.numberOfBits; i++) {
                 ranges[i] = new Range();
 
                 // Nachfolger bestimmen

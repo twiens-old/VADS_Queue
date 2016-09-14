@@ -12,12 +12,6 @@ import java.util.TreeSet;
  * @version 0.1
  */
 public class Node extends Subject implements Comparable<Node> {
-
-    /**
-     * Machen wir in die skip graph klasse.
-     */
-    public static final int NUMBER_OF_BITS = 3;
-
     /**
      * Node with lowest possible id.
      */
@@ -26,7 +20,7 @@ public class Node extends Subject implements Comparable<Node> {
     /**
      * Node with the highest possible id.
      */
-    public static final Node maxNode = new Node("1111");    // TODO: dynamisch erzeugen
+    public static final Node maxNode = new Node("1111111111111111");    // TODO: dynamisch erzeugen
 
     /**
      * Identification bit sequence of the node. (id)
@@ -63,7 +57,7 @@ public class Node extends Subject implements Comparable<Node> {
     /**
      * Constructor. Creates a new node with a random, but unique id.
      */
-    public Node() {
+    public Node(int NUMBER_OF_BITS) {
         this.ID = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(NUMBER_OF_BITS);
         this.neighbours = new TreeSet[NUMBER_OF_BITS];
         this.range = new Range[NUMBER_OF_BITS];
@@ -84,12 +78,12 @@ public class Node extends Subject implements Comparable<Node> {
      */
     public Node (String sequence) {
         this.ID = new BitSequence(sequence);
-        this.neighbours = new TreeSet[NUMBER_OF_BITS];
-        this.range = new Range[NUMBER_OF_BITS];
-        this.predecessor = new Pair[NUMBER_OF_BITS];
-        this.successor = new Pair[NUMBER_OF_BITS];
+        this.neighbours = new TreeSet[sequence.length()];
+        this.range = new Range[sequence.length()];
+        this.predecessor = new Pair[sequence.length()];
+        this.successor = new Pair[sequence.length()];
 
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < sequence.length(); i++) {
             this.predecessor[i] = new Pair();
             this.successor[i] = new Pair();
             this.range[i] = new Range();
@@ -129,7 +123,7 @@ public class Node extends Subject implements Comparable<Node> {
         // Regel 1a
         // Für jeden Level i stellt jeder Knoten u periodisch alle Knoten in N_i(u) vor, dass diese eine sortierte Liste
         // bilden
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < this.getID().toString().length(); i++) {
             SortedSet<Node> nodesLessThanMe = this.neighbours[i].headSet(this);
             TreeSet<Node> nodesLessEqualMe = new TreeSet<>(nodesLessThanMe);
             nodesLessEqualMe.add(this);
@@ -140,6 +134,12 @@ public class Node extends Subject implements Comparable<Node> {
 
             for (Node node : nodesLessThanMe) {
                 Node next = nodesLessEqualMe.higher(node);
+
+                if (node.equals(next)) {
+                    printSendingInformation(this, node, next);
+                    println("LINEARIZE 1A - node equals next (1)");
+                }
+
                 node.send(next);
             }
 
@@ -147,6 +147,12 @@ public class Node extends Subject implements Comparable<Node> {
                 Node next = nodesGreaterThanMe.higher(node);
 
                 if (next != null) {
+
+                    if (node.equals(next)) {
+                        printSendingInformation(this, node, next);
+                        println("LINEARIZE 1A - node equals next (2)");
+                    }
+
                     next.send(node);
                 }
             }
@@ -159,7 +165,7 @@ public class Node extends Subject implements Comparable<Node> {
         // v_j e N_i(v) vor, dass alle Knoten links von u den Nachfolger rechts von u kennenlernen und alle Knoten
         // rechts von u den Vorgänger links von u kennenlernen
 
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < this.getID().toString().length(); i++) {
 
             Node v0 = this.predecessor[i].getNodeZero();
             Node v1 = this.predecessor[i].getNodeOne();
@@ -168,13 +174,12 @@ public class Node extends Subject implements Comparable<Node> {
 
             SortedSet<Node> nodes_less_than_us = this.neighbours[i].headSet(this);
             for (Node current : nodes_less_than_us) {
+
                 if (w0 != null && current.range[i].isNodeInsideRange(w0)) {
-                    this.printSendingInformation(this, current, w0);
                     current.send(w0);
                 }
 
                 if (w1 != null && current.range[i].isNodeInsideRange(w1)) {
-                    this.printSendingInformation(this, current, w1);
                     current.send(w1);
                 }
             }
@@ -182,12 +187,10 @@ public class Node extends Subject implements Comparable<Node> {
             SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
             for (Node current : nodes_greater_than_us) {
                 if (v0 != null && current.range[i].isNodeInsideRange(v0)) {
-                    this.printSendingInformation(this, current, v0);
                     current.send(v0);
                 }
 
                 if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
-                    this.printSendingInformation(this, current, v1);
                     current.send(v1);
                 }
             }
@@ -214,8 +217,12 @@ public class Node extends Subject implements Comparable<Node> {
         // den Knoten w', zu dem w delegiert wird. Solch ein Knoten existiert immer, da w !e range_i(u), und er muss
         // zwischen u und w liegen, d.h. der ID-Bereich von (w',w) ist innerhalb des ID-Bereichs von (u,w)
 
+        if (v.equals(this)) {
+            return;             // TOOD: think of a better way to do that
+        }
+
         boolean temporary = true;
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < this.getID().toString().length(); i++) {
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
@@ -226,6 +233,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
+
                             v.send(this);
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
@@ -322,7 +330,7 @@ public class Node extends Subject implements Comparable<Node> {
      * @param i The level of range to check and update.
      */
     private void updateRange(int i) {
-        if (i < 0 || i > NUMBER_OF_BITS) {
+        if (i < 0 || i > this.getID().toString().length()) {
             throw new IllegalArgumentException("Level i not legal");
         }
 
@@ -367,11 +375,16 @@ public class Node extends Subject implements Comparable<Node> {
                 removedNeighbours.add(node);
 
                 // Find the node with biggest matching prefix.
-                for (int j = NUMBER_OF_BITS-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
+                for (int j = this.getID().toString().length()-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
                         if (!neighbour.equals(node) && prefixMatch(j, neighbour)) {
-                            this.printSendingInformation(this, neighbour, node);
+
+                            if (neighbour.equals(node)) {
+                                this.printSendingInformation(this, neighbour, node);
+                                println("UPDATE NEIGHBOURS - NEIGHBOUR EQUALS NODE");
+                            }
+
                             neighbour.send(node);
                             neighbourDelegated = true;
 
@@ -416,13 +429,13 @@ public class Node extends Subject implements Comparable<Node> {
     public Node getNodeWithLargestCommonPrefix(Node node) {
         TreeSet<Node> neighboursFromAllLevels = new TreeSet<>();
 
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < this.getID().toString().length(); i++) {
             for (Node neighbour : neighbours[i]) {
                 neighboursFromAllLevels.add(neighbour);
             }
         }
 
-        for (int i = NUMBER_OF_BITS-1; i >= 0; i--) {
+        for (int i = this.getID().toString().length()-1; i >= 0; i--) {
             for (Node neighbour : neighboursFromAllLevels) {
                 if (neighbour.prefixMatch(i, node)) {
                     return neighbour;
@@ -470,7 +483,7 @@ public class Node extends Subject implements Comparable<Node> {
         }
         println("");
 
-        for (int i = 0; i < NUMBER_OF_BITS; i++) {
+        for (int i = 0; i < this.getID().toString().length(); i++) {
             println("Level " + i +  "  Pred: " + this.predecessor[i] + " Succ:" + this.successor[i]);
             for (Node neighbour : this.neighbours[i]) {
                 print("\t" + neighbour.getID() + ", ");
@@ -503,7 +516,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     public static boolean prefixMatch(int i, Node firstNode, Node secondNode, int b) {
-        if (i > NUMBER_OF_BITS-1) {
+        if (i > firstNode.getID().toString().length()-1) {
             throw new UnsupportedOperationException();
         }
 
@@ -537,8 +550,6 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     public void printSendingInformation(Node sender, Node receiver, Node message) {
-        if (message.getID().toString().equals("")) {
-            println("##############\nSender: " + sender.getID() + "\nReceiver: " + receiver.getID() + "\nMessage: " + message.getID() + "\n##############");
-        }
+        println("##############\nSender: " + sender.getID() + "\nReceiver: " + receiver.getID() + "\nMessage: " + message.getID() + "\n##############");
     }
 }

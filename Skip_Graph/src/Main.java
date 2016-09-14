@@ -3,6 +3,20 @@
  */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
+
+        int numberOfTests = 10;
+
+        for (int i = 0; i < numberOfTests; i++) {
+            boolean success = testLauf();
+
+            if (!success) {
+                break;
+            }
+        }
+
+    }
+
+    private static boolean testLauf() throws InterruptedException{
         int numberOfNodes = 20;
 
         int numberOfBits = 10;
@@ -34,6 +48,7 @@ public class Main {
 
         for (int i = 0; i < numberOfNodes; i++) {
             graph.join(nodes[i]);
+            Thread.sleep(1000);
         }
 
         // 3 sekunden laufen lassen
@@ -49,5 +64,7 @@ public class Main {
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
         System.out.println("################ Ergebnis = " + result + " ################");
+
+        return result;
     }
 }
