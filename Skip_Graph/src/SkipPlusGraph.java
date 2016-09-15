@@ -8,7 +8,6 @@ import java.util.TreeSet;
  */
 public class SkipPlusGraph {
 
-
     public final int numberOfBits;
 
     private ArrayList<Node> nodes;
@@ -35,6 +34,11 @@ public class SkipPlusGraph {
         if (nodes.size() > 0) {
             int responsibleNodePosition = randInt(0, nodes.size() - 1);
             //int responsibleNodePosition = 0;
+
+            if (nodes.get(responsibleNodePosition).equals(node)) {
+                System.out.println("JOIN SELF INTRODUCTION");
+                System.exit(-1);
+            }
 
             nodes.get(responsibleNodePosition).send(node);
         }

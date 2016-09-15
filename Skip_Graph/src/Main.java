@@ -4,7 +4,7 @@
 public class Main {
     public static void main(String[] args) throws InterruptedException {
 
-        int numberOfTests = 10;
+        int numberOfTests = 1;
 
         for (int i = 0; i < numberOfTests; i++) {
             boolean success = testLauf();
@@ -19,9 +19,9 @@ public class Main {
     private static boolean testLauf() throws InterruptedException{
         UniqueRandomBitStringGenerator.ResetBitStrings();
 
-        int numberOfNodes = 14;
+        int numberOfNodes = 21;
 
-        int numberOfBits = 4;
+        int numberOfBits = 5;
 
         SkipPlusGraph graph = new SkipPlusGraph(numberOfBits);
         Node[] nodes = new Node[(int) Math.pow(2, numberOfBits)];
@@ -56,22 +56,35 @@ public class Main {
         // 2 sekunden laufen lassen
         Thread.sleep(10000);
 
-        graph.leave(nodes[2]);
-        Thread.sleep(1000);
-        graph.leave(nodes[6]);
-        Thread.sleep(1000);
-        graph.leave(nodes[7]);
+//        graph.leave(nodes[2]);
+//        Thread.sleep(1000);
+//        graph.leave(nodes[6]);
+//        Thread.sleep(1000);
+//        graph.leave(nodes[7]);
 
         // 2 sekunden laufen lassen
         Thread.sleep(2000);
-
 
         System.out.println("");
         graph.printNeighbourHoodForAllLevels();
         System.out.println("");
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
-        System.out.println("################ 2. Ergebnis = " + result + " ################");
+        System.out.println("################ Ergebnis = " + result + " ################\n\n");
+
+        Message[] messages = new Message[10];
+        for (int i = 10; i < 20; i++) {
+            messages[i-10] = new Message(nodes[i+1], Message.MessageType.ROUTING, new StringBuilder("Start: " + nodes[i].getID() + " - Destination: " + nodes[i+1].getID() + "\n"));
+
+            nodes[i].send(messages[i-10]);
+            Thread.sleep(500);
+        }
+
+        Thread.sleep(5000);
+
+        for (int i = 0; i < 10; i++) {
+            System.out.println(messages[i].message.toString());
+        }
 
         for (int i = 0; i < numberOfNodes; i++) {
             if (nodes[i] != null) {

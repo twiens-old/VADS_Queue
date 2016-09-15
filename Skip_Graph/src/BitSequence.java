@@ -27,6 +27,14 @@ public class BitSequence {
         bitSequence = sequence;
     }
 
+    public boolean getBit(int i) {
+        if (i <= 0 || i >= this.bitSequence.length) {
+            throw new IllegalArgumentException("Index i is out of bounds.");
+        }
+
+        return this.bitSequence[i-1];
+    }
+
     public BitSequence getPrefix(int prefixBits) {
         boolean[] prefix = new boolean[prefixBits];
 
