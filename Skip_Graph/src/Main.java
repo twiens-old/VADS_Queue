@@ -4,7 +4,7 @@
 public class Main {
     public static void main(String[] args) throws InterruptedException {
 
-        int numberOfTests = 1;
+        int numberOfTests = 30;
 
         for (int i = 0; i < numberOfTests; i++) {
             boolean success = testLauf();
@@ -19,9 +19,9 @@ public class Main {
     private static boolean testLauf() throws InterruptedException{
         UniqueRandomBitStringGenerator.ResetBitStrings();
 
-        int numberOfNodes = 21;
+        int numberOfNodes = 30;
 
-        int numberOfBits = 5;
+        int numberOfBits = 6;
 
         SkipPlusGraph graph = new SkipPlusGraph(numberOfBits);
         Node[] nodes = new Node[(int) Math.pow(2, numberOfBits)];
@@ -50,20 +50,25 @@ public class Main {
 
         for (int i = 0; i < numberOfNodes; i++) {
             graph.join(nodes[i]);
-            Thread.sleep(1000);
+            Thread.sleep(500);
         }
 
         // 2 sekunden laufen lassen
-        Thread.sleep(10000);
+        Thread.sleep(1000);
 
-//        graph.leave(nodes[2]);
-//        Thread.sleep(1000);
-//        graph.leave(nodes[6]);
-//        Thread.sleep(1000);
-//        graph.leave(nodes[7]);
+        graph.leave(nodes[2]);
+        System.out.println(nodes[2].getID() + " leaving.");
+        Thread.sleep(1000);
+
+        graph.leave(nodes[6]);
+        System.out.println(nodes[6].getID() + " leaving.");
+        Thread.sleep(1000);
+
+        graph.leave(nodes[7]);
+        System.out.println(nodes[7].getID() + " leaving.");
+        Thread.sleep(1000);
 
         // 2 sekunden laufen lassen
-        Thread.sleep(2000);
 
         System.out.println("");
         graph.printNeighbourHoodForAllLevels();
@@ -80,10 +85,16 @@ public class Main {
             Thread.sleep(500);
         }
 
-        Thread.sleep(5000);
+        nodes[2].printNeighbourhood();
+        nodes[6].printNeighbourhood();
+        nodes[7].printNeighbourhood();
 
         for (int i = 0; i < 10; i++) {
-            System.out.println(messages[i].message.toString());
+            if (!messages[i].arrived) {
+                System.out.println(messages[i].message.toString());
+            } else {
+                System.out.println(i + "arrived.");
+            }
         }
 
         for (int i = 0; i < numberOfNodes; i++) {

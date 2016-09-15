@@ -116,13 +116,15 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         if (message instanceof Message) {   // TODO: annahme : leave message
-            if (((Message) message).message.equals("leave")) {
+            Message msg = (Message) message;
+
+            if (msg.message.toString().equals("leave")) {
                 this.handleLeave(((Message) message).node);;
-            } else if (((Message) message).message.equals("force")) {
-                this.neighboursForBiDirection.add(((Message) message).node);
-            } else if (((Message) message).message.equals("force delete")) {
-                this.neighboursForBiDirection.remove(((Message) message).node);
-            } else if (((Message) message).type == Message.MessageType.ROUTING) {
+            } else if (msg.message.toString().equals("force")) {
+                this.neighboursForBiDirection.add(msg.node);
+            } else if (msg.message.toString().equals("force delete")) {
+                this.neighboursForBiDirection.remove(msg.node);
+            } else if (msg.type == Message.MessageType.ROUTING) {
                 this.routing((Message) message);
             }
         }
@@ -138,12 +140,6 @@ public class Node extends Subject implements Comparable<Node> {
 
         for (int i = 0; i < this.getID().toString().length(); i++) {
             for (Node neighbour : neighbours[i]) {
-
-                if (neighbour.equals(this)) {
-                    println("ON TIME OUT - SELF");
-                    System.exit(-1);
-                }
-
                 neighbour.send(this);
             }
         }
@@ -164,13 +160,6 @@ public class Node extends Subject implements Comparable<Node> {
 
             for (Node node : nodesLessThanMe) {
                 Node next = nodesLessEqualMe.higher(node);
-
-                if (node.equals(next)) {
-                    printSendingInformation(this, node, next);
-                    println("LINEARIZE 1A - node equals next (1)");
-                    System.exit(-1);
-                }
-
                 node.send(next);
             }
 
@@ -178,13 +167,6 @@ public class Node extends Subject implements Comparable<Node> {
                 Node next = nodesGreaterThanMe.higher(node);
 
                 if (next != null) {
-
-                    if (node.equals(next)) {
-                        printSendingInformation(this, node, next);
-                        println("LINEARIZE 1A - node equals next (2)");
-                        System.exit(-1);
-                    }
-
                     next.send(node);
                 }
             }
@@ -208,20 +190,10 @@ public class Node extends Subject implements Comparable<Node> {
             for (Node current : nodes_less_than_us) {
 
                 if (w0 != null && current.range[i].isNodeInsideRange(w0)) {
-                    if (current.equals(w0)) {
-                        println("BRIDGE RULE 1b w0 - SELF");
-                        System.exit(-1);
-                    }
-
                     current.send(w0);
                 }
 
                 if (w1 != null && current.range[i].isNodeInsideRange(w1)) {
-                    if (current.equals(w0)) {
-                        println("BRIDGE RULE 1b w1 - SELF");
-                        System.exit(-1);
-                    }
-
                     current.send(w1);
                 }
             }
@@ -229,20 +201,10 @@ public class Node extends Subject implements Comparable<Node> {
             SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
             for (Node current : nodes_greater_than_us) {
                 if (v0 != null && current.range[i].isNodeInsideRange(v0)) {
-                    if (current.equals(v0)) {
-                        println("BRIDGE RULE 1b v0 - SELF");
-                        System.exit(-1);
-                    }
-
                     current.send(v0);
                 }
 
                 if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
-                    if (current.equals(v1)) {
-                        println("BRIDGE RULE 1b v1 - SELF");
-                        System.exit(-1);
-                    }
-
                     current.send(v1);
                 }
             }
@@ -284,14 +246,7 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
-                            this.neighbours[i].add(v);
-
-                            if (v.equals(this)) {
-                                println("LINEARIZE (Level " + i + ") pred1 - SELF");
-                                System.exit(-1);
-                            }
-
-                            v.send(this);
+                            this.neighbours[i].add(v); v.send(this);
                             v.send(new Message(this, "force"));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
@@ -308,12 +263,6 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-
-                            if (v.equals(this)) {
-                                println("LINEARIZE (Level " + i + ") pred0 - SELF");
-                                System.exit(-1);
-                            }
-
                             v.send(this);
                             v.send(new Message(this, "force"));
 
@@ -334,12 +283,6 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-
-                            if (v.equals(this)) {
-                                println("LINEARIZE (Level " + i + ") succ1 - SELF");
-                                System.exit(-1);
-                            }
-
                             v.send(this);
                             v.send(new Message(this, "force"));
 
@@ -358,12 +301,6 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-
-                            if (v.equals(this)) {
-                                println("LINEARIZE (Level " + i + ") succ0 - SELF");
-                                System.exit(-1);
-                            }
-
                             v.send(this);
                             v.send(new Message(this, "force"));
 
@@ -380,12 +317,7 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
-
-                    if (v.equals(this)) {
-                        println("LINEARIZE (Level " + i + ") PREFIX MATCH AND IN RANGE - SELF");
-                        System.exit(-1);
-                    }
-
+                    v.send(new Message(this, "force"));
                     v.send(this);
 
                     this.introduceAllNeighboursAtLevelToEachOther(i);       // Nötig
@@ -397,11 +329,6 @@ public class Node extends Subject implements Comparable<Node> {
 
         Node largestCommonPrefixNode = this.getNodeWithLargestCommonPrefix(v);
         if (temporary && largestCommonPrefixNode != null) {
-            if (v.equals(this)) {
-                println("LINEARIZE LARGEST COMMON PREFIX - SELF");
-                System.exit(-1);
-            }
-
             largestCommonPrefixNode.send(v);        // Nötig
         }
     }
@@ -473,18 +400,6 @@ public class Node extends Subject implements Comparable<Node> {
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
                         if (!neighbour.equals(node) && prefixMatch(j, neighbour)) {
-
-                            if (neighbour.equals(node)) {
-                                this.printSendingInformation(this, neighbour, node);
-                                println("UPDATE NEIGHBOURS - NEIGHBOUR EQUALS NODE");
-                                System.exit(-1);
-                            }
-
-                            if (neighbour.equals(node)) {
-                                println("UPDATE NEIGHBOURS (Level " + i + ") - SELF");
-                                System.exit(-1);
-                            }
-
                             neighbour.send(node);
                             neighbourDelegated = true;
 
@@ -546,6 +461,18 @@ public class Node extends Subject implements Comparable<Node> {
         return null;
     }
 
+/*    public void send(Node v) {
+        if (v.equals(this)) {
+            StringBuilder sb = new StringBuilder();
+            for(StackTraceElement e: getStackTrace()) {
+                sb.append(e.toString() + "\n");
+            }
+            println(sb.toString());
+            System.exit(0);
+        }
+        super.send(v);
+    }*/
+
     public void leave() {
         TreeSet<Node> allNeighbours = new TreeSet<>();
 
@@ -600,6 +527,7 @@ public class Node extends Subject implements Comparable<Node> {
         message.message.append("Current Hop: " + this.getID() + "\n");
 
         if (destination.equals(this)) {
+            message.arrived = true;
             message.message.append("Message arrived at Destination = " + destination.getID() + " Message = \n");
             return;
         }
@@ -687,6 +615,12 @@ public class Node extends Subject implements Comparable<Node> {
             }
             println("");
         }
+
+        println("Bidirected neighbours: ");
+        for (Node neighbour : this.neighboursForBiDirection) {
+            print("\t" + neighbour.getID() + ", ");
+        }
+        println("");
 
         println("########################################################################");
     }

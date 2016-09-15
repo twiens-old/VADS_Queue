@@ -13,6 +13,7 @@ public class Message {
     public Node node;
     public MessageType type;
     public StringBuilder message;
+    public boolean arrived = false;
 
     public Message(Node node, String message) {
         this.node = node;
