@@ -102,6 +102,18 @@ public class BitSequence {
         return false;   // Beide Sequenzen sind gleich
     }
 
+    public int toInt() {
+        int result = 0;
+
+        for (int i = 0; i < this.bitSequence.length; i++) {
+            if (this.bitSequence[i]) {
+                result += Math.pow(2, numberOfBits-1-i);
+            }
+        }
+
+        return result;
+    }
+
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();

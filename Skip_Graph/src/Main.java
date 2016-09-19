@@ -4,16 +4,23 @@
 public class Main {
     public static void main(String[] args) throws InterruptedException {
 
-        int numberOfTests = 30;
+        //int numberOfTests = 30;
 
-        for (int i = 0; i < numberOfTests; i++) {
-            boolean success = testLauf();
+        //for (int i = 0; i < numberOfTests; i++) {
+        //    boolean success = testLauf();
 
-            if (!success) {
-                break;
-            }
-        }
+        //    if (!success) {
+        //        break;
+        //    }
+        //}
 
+        QueueNode node1 = new QueueNode("111");
+        QueueNode node2 = new QueueNode("110");
+
+        System.out.println(node1.getID().toInt());
+        System.out.println(HashFunction.hashQueueNode(node1));
+        System.out.println(node2.getID().toInt());
+        System.out.println(HashFunction.hashQueueNode(node2));
     }
 
     private static boolean testLauf() throws InterruptedException{
