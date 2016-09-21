@@ -7,7 +7,7 @@ import java.util.TreeSet;
  */
 
 /**
- * Represents a node of the Skip+ graph.
+ * Represents a destination of the Skip+ graph.
  * @author twiens, fischerr, jeromeK
  * @version 0.1
  */
@@ -23,29 +23,29 @@ public class Node extends Subject implements Comparable<Node> {
     public static final Node maxNode = new Node("1111111111111111");    // TODO: dynamisch erzeugen
 
     /**
-     * Identification bit sequence of the node. (id)
+     * Identification bit sequence of the destination. (id)
      */
     private BitSequence ID;
 
     /**
-     * Array that contains the level-i-neighbours of the node at index i.
+     * Array that contains the level-i-neighbours of the destination at index i.
      */
     public TreeSet<Node>[] neighbours;
 
     public TreeSet<Node> neighboursForBiDirection;
 
     /**
-     * Array that contains the level-i-range of the node at index i.
+     * Array that contains the level-i-range of the destination at index i.
      */
     public Range[] range;
 
     /**
-     * Array that contains the level-i-predecessors of the node at index i.
+     * Array that contains the level-i-predecessors of the destination at index i.
      */
     public Pair[] predecessor;
 
     /**
-     * Array that contains the level-i-predecessors of the node at index i.
+     * Array that contains the level-i-predecessors of the destination at index i.
      */
     public Pair[] successor;
 
@@ -57,7 +57,7 @@ public class Node extends Subject implements Comparable<Node> {
     private TreeSet<Node> leavingNodes = new TreeSet<>();
 
     /**
-     * Constructor. Creates a new node with a random, but unique id.
+     * Constructor. Creates a new destination with a random, but unique id.
      */
     public Node(int NUMBER_OF_BITS) {
         this.ID = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(NUMBER_OF_BITS);
@@ -77,7 +77,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     /**
-     * Constructor. Creates a new node with a specific id.
+     * Constructor. Creates a new destination with a specific id.
      * @param sequence The id as bit sequence.
      */
     public Node (String sequence) {
@@ -119,11 +119,11 @@ public class Node extends Subject implements Comparable<Node> {
             Message msg = (Message) message;
 
             if (msg.message.toString().equals("leave")) {
-                this.handleLeave(((Message) message).node);;
+                this.handleLeave(((Message) message).destination);;
             } else if (msg.message.toString().equals("force")) {
-                this.neighboursForBiDirection.add(msg.node);
+                this.neighboursForBiDirection.add(msg.destination);
             } else if (msg.message.toString().equals("force delete")) {
-                this.neighboursForBiDirection.remove(msg.node);
+                this.neighboursForBiDirection.remove(msg.destination);
             } else if (msg.type == Message.MessageType.ROUTING) {
                 this.routing((Message) message);
             }
@@ -247,7 +247,7 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v); v.send(this);
-                            v.send(new Message(this, "force"));
+                            v.send(new Message(this, "force", this));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -264,7 +264,7 @@ public class Node extends Subject implements Comparable<Node> {
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
                             v.send(this);
-                            v.send(new Message(this, "force"));
+                            v.send(new Message(this, "force", this));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -284,7 +284,7 @@ public class Node extends Subject implements Comparable<Node> {
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
                             v.send(this);
-                            v.send(new Message(this, "force"));
+                            v.send(new Message(this, "force", this));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                         }
@@ -302,7 +302,7 @@ public class Node extends Subject implements Comparable<Node> {
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
                             v.send(this);
-                            v.send(new Message(this, "force"));
+                            v.send(new Message(this, "force", this));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                         }
@@ -317,7 +317,7 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
-                    v.send(new Message(this, "force"));
+                    v.send(new Message(this, "force", this));
                     v.send(this);
 
                     this.introduceAllNeighboursAtLevelToEachOther(i);       // Nötig
@@ -334,7 +334,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     /**
-     * Returns the id of the node.
+     * Returns the id of the destination.
      * @return
      */
     public BitSequence getID() {
@@ -346,7 +346,7 @@ public class Node extends Subject implements Comparable<Node> {
      * Checks and updates the range at level i if it is not valid.
      * The valid range of level i is:
      *     range_i(v) = [min_b(pred_i(v,b)), max_b(succ_i(v,b))], b={0,1}
-     * This method is called after a successor or predecessor of the node changed.
+     * This method is called after a successor or predecessor of the destination changed.
      * @param i The level of range to check and update.
      */
     private void updateRange(int i) {
@@ -381,10 +381,10 @@ public class Node extends Subject implements Comparable<Node> {
 
     // TODO: think about better naming
     /**
-     * Updates the level-i-neighbours of the node. Every neighbour that
+     * Updates the level-i-neighbours of the destination. Every neighbour that
      * is not inside the range at level i will be removed from the neighbourhood
-     * at this level and delegated to the node with biggest matching prefix known.
-     * This method is called after a successor or predecessor of the node changed.
+     * at this level and delegated to the destination with biggest matching prefix known.
+     * This method is called after a successor or predecessor of the destination changed.
      * @param i The level of the skip+ graph.
      */
     private void updateNeighbours(int i) {
@@ -393,9 +393,9 @@ public class Node extends Subject implements Comparable<Node> {
         for (Node node : neighbours[i]) {
             if (!range[i].isNodeInsideRange(node)) {
                 removedNeighbours.add(node);
-                node.send(new Message(this, "force delete"));
+                node.send(new Message(this, "force delete", this));
 
-                // Find the node with biggest matching prefix.
+                // Find the destination with biggest matching prefix.
                 for (int j = this.getID().toString().length()-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
@@ -416,9 +416,9 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     /**
-     * Checks if this node is greater than another node (more specific, it compares the IDs).
+     * Checks if this destination is greater than another destination (more specific, it compares the IDs).
      * @param anotherNode
-     * @return true, if this node is strictly greater. false, if not.
+     * @return true, if this destination is strictly greater. false, if not.
      */
     public boolean isGreaterThan(Node anotherNode) {
         if (anotherNode == null) {
@@ -429,9 +429,9 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     /**
-     * Checks if this node is smaller than another node (more specific, it compares the IDs).
+     * Checks if this destination is smaller than another destination (more specific, it compares the IDs).
      * @param anotherNode
-     * @return true, if this node is strictly less. false, if not.
+     * @return true, if this destination is strictly less. false, if not.
      */
     public boolean isLessThan(Node anotherNode) {
         if (anotherNode == null) {
@@ -445,10 +445,10 @@ public class Node extends Subject implements Comparable<Node> {
         TreeSet<Node> neighboursFromAllLevels = new TreeSet<>();
 
         for (int i = 0; i < this.getID().toString().length(); i++) {
-            for (Node neighbour : neighbours[i]) {
-                neighboursFromAllLevels.add(neighbour);
-            }
+            neighboursFromAllLevels.addAll(this.neighbours[i]);
         }
+
+        neighboursFromAllLevels.addAll(this.neighboursForBiDirection);
 
         for (int i = this.getID().toString().length()-1; i >= 0; i--) {
             for (Node neighbour : neighboursFromAllLevels) {
@@ -482,7 +482,7 @@ public class Node extends Subject implements Comparable<Node> {
         allNeighbours.addAll(neighboursForBiDirection);
 
         for (Node neighbour : allNeighbours) {
-            neighbour.send(new Message(this, "leave"));
+            neighbour.send(new Message(this, "leave", this));
         }
     }
 
@@ -522,7 +522,7 @@ public class Node extends Subject implements Comparable<Node> {
 
     // TODO: falls destination nicht existiert???
     public void routing(Message message) {
-        Node destination = message.node;
+        Node destination = message.destination;
 
         message.message.append("Current Hop: " + this.getID() + "\n");
 
@@ -574,7 +574,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     /**
-     * Compares the prefixes of this node to another node.
+     * Compares the prefixes of this destination to another destination.
      * @param i Length of prefix to compare.
      * @param anotherNode
      * @return
@@ -676,7 +676,7 @@ public class Node extends Subject implements Comparable<Node> {
 
             return 0;
         } else {
-            throw new IllegalArgumentException("Object compared to node is null.");
+            throw new IllegalArgumentException("Object compared to destination is null.");
         }
     }
 

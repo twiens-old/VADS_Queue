@@ -23,14 +23,14 @@ public class SkipPlusGraph {
 
     public void join(Node node) {
         if (node == null) {
-            throw new IllegalArgumentException("The node added to the skip graph cannot be null.");
+            throw new IllegalArgumentException("The destination added to the skip graph cannot be null.");
         }
 
         if (!node.isAlive()) {
             node.start();
         }
 
-        // if there are other nodes contained in the graph, the joining node has to be send to one of these nodes
+        // if there are other nodes contained in the graph, the joining destination has to be send to one of these nodes
         if (nodes.size() > 0) {
             int responsibleNodePosition = randInt(0, nodes.size() - 1);
             //int responsibleNodePosition = 0;
@@ -48,7 +48,7 @@ public class SkipPlusGraph {
 
     public void leave(Node node) {      // TODO: evtl. über hearbeating den Fall abdecken, dass ein Prozess einfach ausfällt
         if (node == null) {
-            throw new IllegalArgumentException("The node removed from skip graph cannot be null.");
+            throw new IllegalArgumentException("The destination removed from skip graph cannot be null.");
         }
 
         node.leave();

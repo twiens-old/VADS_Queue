@@ -9,7 +9,7 @@ public class HashFunction {
     }
 
     public static double hashQueueNode(QueueNode node) {
-        // starting position = Integer(node.getId()) * 1/(2^numberOfBits+1)
+        // starting position = Integer(destination.getId()) * 1/(2^numberOfBits+1)
 
         return node.getID().toInt() / (Math.pow(2, node.getID().toString().length()));
     }
