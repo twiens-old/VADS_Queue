@@ -5,16 +5,6 @@ public class Range {
     private Node begin;
     private Node end;
 
-    public Range(){
-        this.begin = Node.minNode;
-        this.end = Node.maxNode;
-    }
-
-    public Range(Node begin, Node end) {
-        this.setBegin(begin);
-        this.setEnd(end);
-    }
-
     public Node getEnd() {
         return end;
     }

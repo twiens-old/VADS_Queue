@@ -1,3 +1,4 @@
+import java.rmi.UnexpectedException;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -12,16 +13,6 @@ import java.util.TreeSet;
  * @version 0.1
  */
 public class Node extends Subject implements Comparable<Node> {
-    /**
-     * Node with lowest possible id.
-     */
-    public static final Node minNode = new Node("");
-
-    /**
-     * Node with the highest possible id.
-     */
-    public static final Node maxNode = new Node("1111111111111111");    // TODO: dynamisch erzeugen
-
     /**
      * Identification bit sequence of the destination. (id)
      */
@@ -110,23 +101,25 @@ public class Node extends Subject implements Comparable<Node> {
      */
     @Override
     protected void onMessageReceived(Object message) {
-        if (message instanceof Node) {
-            this.receivedNodes.add((Node) message);
-            this.linearize((Node) message);
-        }
-
-        if (message instanceof Message) {   // TODO: annahme : leave message
-            Message msg = (Message) message;
-
-            if (msg.message.toString().equals("leave")) {
-                this.handleLeave(((Message) message).destination);;
-            } else if (msg.message.toString().equals("force")) {
-                this.neighboursForBiDirection.add(msg.destination);
-            } else if (msg.message.toString().equals("force delete")) {
-                this.neighboursForBiDirection.remove(msg.destination);
-            } else if (msg.type == Message.MessageType.ROUTING) {
-                this.routing((Message) message);
+        if (message instanceof NodeMessage) {
+            Node node = ((NodeMessage)message).node;
+            switch (((NodeMessage)message).type) {
+                case LEAVE:
+                    this.handleLeave(node);
+                    break;
+                case INTRODUCE:
+                    this.receivedNodes.add(node);
+                    this.linearize(node);
+                    break;
+                case FORCE:
+                    this.neighboursForBiDirection.add(node);
+                    break;
+                case FORCE_DELETE:
+                    this.neighboursForBiDirection.remove(node);
+                    break;
             }
+        } else if (message instanceof StringMessage) {
+            this.routing((StringMessage)message);
         }
     }
 
@@ -138,9 +131,9 @@ public class Node extends Subject implements Comparable<Node> {
         this.linearizeRule1a();
         this.bridgeRule1b();
 
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             for (Node neighbour : neighbours[i]) {
-                neighbour.send(this);
+                neighbour.send(new NodeMessage(this, neighbour, this, NodeMessage.MessageType.INTRODUCE));
             }
         }
     }
@@ -149,7 +142,7 @@ public class Node extends Subject implements Comparable<Node> {
         // Regel 1a
         // Für jeden Level i stellt jeder Knoten u periodisch alle Knoten in N_i(u) vor, dass diese eine sortierte Liste
         // bilden
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             SortedSet<Node> nodesLessThanMe = this.neighbours[i].headSet(this);
             TreeSet<Node> nodesLessEqualMe = new TreeSet<>(nodesLessThanMe);
             nodesLessEqualMe.add(this);
@@ -160,14 +153,14 @@ public class Node extends Subject implements Comparable<Node> {
 
             for (Node node : nodesLessThanMe) {
                 Node next = nodesLessEqualMe.higher(node);
-                node.send(next);
+                node.send(new NodeMessage(this, node, next, NodeMessage.MessageType.INTRODUCE));
             }
 
             for (Node node : nodesGreaterEqualMe) {
                 Node next = nodesGreaterThanMe.higher(node);
 
                 if (next != null) {
-                    next.send(node);
+                    next.send(new NodeMessage(this, node, next, NodeMessage.MessageType.INTRODUCE));
                 }
             }
         }
@@ -179,7 +172,7 @@ public class Node extends Subject implements Comparable<Node> {
         // v_j e N_i(v) vor, dass alle Knoten links von u den Nachfolger rechts von u kennenlernen und alle Knoten
         // rechts von u den Vorgänger links von u kennenlernen
 
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
 
             Node v0 = this.predecessor[i].getNodeZero();
             Node v1 = this.predecessor[i].getNodeOne();
@@ -190,22 +183,22 @@ public class Node extends Subject implements Comparable<Node> {
             for (Node current : nodes_less_than_us) {
 
                 if (w0 != null && current.range[i].isNodeInsideRange(w0)) {
-                    current.send(w0);
+                    current.send(new NodeMessage(this, current, w0, NodeMessage.MessageType.INTRODUCE));
                 }
 
                 if (w1 != null && current.range[i].isNodeInsideRange(w1)) {
-                    current.send(w1);
+                    current.send(new NodeMessage(this, current, w1, NodeMessage.MessageType.INTRODUCE));
                 }
             }
 
             SortedSet<Node> nodes_greater_than_us = this.neighbours[i].tailSet(this, false);
             for (Node current : nodes_greater_than_us) {
                 if (v0 != null && current.range[i].isNodeInsideRange(v0)) {
-                    current.send(v0);
+                    current.send(new NodeMessage(this, current, v0, NodeMessage.MessageType.INTRODUCE));
                 }
 
                 if (v1 != null && current.range[i].isNodeInsideRange(v1)) {
-                    current.send(v1);
+                    current.send(new NodeMessage(this, current, v1, NodeMessage.MessageType.INTRODUCE));
                 }
             }
         }
@@ -215,8 +208,8 @@ public class Node extends Subject implements Comparable<Node> {
         for (Node node1 : this.neighbours[i]) {
             for (Node node2 : this.neighbours[i]) {
                 if (!node1.equals(node2)) {
-                    node1.send(node2);
-                    node2.send(node1);
+                    node1.send(new NodeMessage(this, node1, node2, NodeMessage.MessageType.INTRODUCE));
+                    node2.send(new NodeMessage(this, node2, node1, NodeMessage.MessageType.INTRODUCE));
                 }
             }
         }
@@ -236,7 +229,7 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         boolean temporary = true;
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             // predecessors
             if (this.isGreaterThan(v)) {                              // überprüfe ob v Vorgänger von this
                 if (prefixMatch(i, this, v, 1)) {                       // prüfe ob prefix_i konkateniert mit 1 mit id(v) übereinstimmt
@@ -246,8 +239,9 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
-                            this.neighbours[i].add(v); v.send(this);
-                            v.send(new Message(this, "force", this));
+                            this.neighbours[i].add(v);
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -263,8 +257,8 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
-                            v.send(new Message(this, "force", this));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                             temporary = false;
@@ -283,8 +277,8 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
-                            v.send(new Message(this, "force", this));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                         }
@@ -301,8 +295,8 @@ public class Node extends Subject implements Comparable<Node> {
 
                         if (!this.neighbours[i].contains(v)) {
                             this.neighbours[i].add(v);
-                            v.send(this);
-                            v.send(new Message(this, "force", this));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
+                            v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
 
                             this.introduceAllNeighboursAtLevelToEachOther(i);
                         }
@@ -317,8 +311,8 @@ public class Node extends Subject implements Comparable<Node> {
             if (this.prefixMatch(i, v) && range[i].isNodeInsideRange(v)) {
                 if (!this.neighbours[i].contains(v)) {
                     this.neighbours[i].add(v);
-                    v.send(new Message(this, "force", this));
-                    v.send(this);
+                    v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
+                    v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
 
                     this.introduceAllNeighboursAtLevelToEachOther(i);       // Nötig
                 }
@@ -329,7 +323,7 @@ public class Node extends Subject implements Comparable<Node> {
 
         Node largestCommonPrefixNode = this.getNodeWithLargestCommonPrefix(v);
         if (temporary && largestCommonPrefixNode != null) {
-            largestCommonPrefixNode.send(v);        // Nötig
+            largestCommonPrefixNode.send(new NodeMessage(this, largestCommonPrefixNode, v, NodeMessage.MessageType.INTRODUCE));        // Nötig
         }
     }
 
@@ -350,7 +344,7 @@ public class Node extends Subject implements Comparable<Node> {
      * @param i The level of range to check and update.
      */
     private void updateRange(int i) {
-        if (i < 0 || i > this.getID().toString().length()) {
+        if (i < 0 || i > this.getID().length()) {
             throw new IllegalArgumentException("Level i not legal");
         }
 
@@ -359,7 +353,7 @@ public class Node extends Subject implements Comparable<Node> {
         } else if (predecessor[i].getNodeOne() == null && predecessor[i].getNodeZero() != null) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else if (predecessor[i].getNodeZero() == null && predecessor[i].getNodeOne() == null) {
-            range[i].setBegin(minNode);
+            range[i].setBegin(null);
         } else if (predecessor[i].getNodeZero().isLessThan(predecessor[i].getNodeOne())) {
             range[i].setBegin(predecessor[i].getNodeZero());
         } else {
@@ -371,7 +365,7 @@ public class Node extends Subject implements Comparable<Node> {
         } else if (successor[i].getNodeOne() == null && successor[i].getNodeZero() != null) {
             range[i].setEnd(successor[i].getNodeZero());
         } else if (successor[i].getNodeZero() == null && successor[i].getNodeOne() == null) {
-            range[i].setEnd(maxNode);
+            range[i].setEnd(null);
         } else if (successor[i].getNodeZero().isGreaterThan(successor[i].getNodeOne())) {
             range[i].setEnd(successor[i].getNodeZero());
         } else {
@@ -393,14 +387,14 @@ public class Node extends Subject implements Comparable<Node> {
         for (Node node : neighbours[i]) {
             if (!range[i].isNodeInsideRange(node)) {
                 removedNeighbours.add(node);
-                node.send(new Message(this, "force delete", this));
+                node.send(new NodeMessage(this, node, this, NodeMessage.MessageType.FORCE_DELETE));
 
                 // Find the destination with biggest matching prefix.
-                for (int j = this.getID().toString().length()-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
+                for (int j = this.getID().length()-1; j >= 0; j--) { // checken ob Ausgangspunkt von i reicht
                     boolean neighbourDelegated = false;
                     for (Node neighbour : neighbours[j]) {
                         if (!neighbour.equals(node) && prefixMatch(j, neighbour)) {
-                            neighbour.send(node);
+                            neighbour.send(new NodeMessage(this, neighbour, node, NodeMessage.MessageType.INTRODUCE));
                             neighbourDelegated = true;
 
                             continue;
@@ -444,13 +438,13 @@ public class Node extends Subject implements Comparable<Node> {
     public Node getNodeWithLargestCommonPrefix(Node node) {
         TreeSet<Node> neighboursFromAllLevels = new TreeSet<>();
 
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             neighboursFromAllLevels.addAll(this.neighbours[i]);
         }
 
         neighboursFromAllLevels.addAll(this.neighboursForBiDirection);
 
-        for (int i = this.getID().toString().length()-1; i >= 0; i--) {
+        for (int i = this.getID().length()-1; i >= 0; i--) {
             for (Node neighbour : neighboursFromAllLevels) {
                 if (neighbour.prefixMatch(i, node)) {
                     return neighbour;
@@ -476,13 +470,13 @@ public class Node extends Subject implements Comparable<Node> {
     public void leave() {
         TreeSet<Node> allNeighbours = new TreeSet<>();
 
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             allNeighbours.addAll(neighbours[i]);
         }
         allNeighbours.addAll(neighboursForBiDirection);
 
         for (Node neighbour : allNeighbours) {
-            neighbour.send(new Message(this, "leave", this));
+            neighbour.send(new NodeMessage(this, neighbour, this, NodeMessage.MessageType.LEAVE));
         }
     }
 
@@ -492,7 +486,7 @@ public class Node extends Subject implements Comparable<Node> {
         this.leavingNodes.add(leavingNode);
 
         // gebe den Unmittelbaren Nachbarn bescheid, dass diese die Referenzen auf einen Löschen sollen
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             if (this.predecessor[i].getNodeZero() != null && this.predecessor[i].getNodeZero().equals(leavingNode)) {
                 System.out.println("Node = " + this.getID() + " Leaving: Set pred0 to minNode");
                 this.predecessor[i].setNodeZero(null);
@@ -521,8 +515,8 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     // TODO: falls destination nicht existiert???
-    public void routing(Message message) {
-        Node destination = message.destination;
+    public void routing(StringMessage message) {
+        Node destination = message.receiver;
 
         message.message.append("Current Hop: " + this.getID() + "\n");
 
@@ -587,7 +581,7 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     public int getNumberOfMatchingPrefixes(Node anotherNode) {
-        for (int i = 1; i < this.getID().toString().length(); i++) {
+        for (int i = 1; i < this.getID().length(); i++) {
             if (!this.prefixMatch(i, anotherNode)) {
                 return i-1;
             }
@@ -608,7 +602,7 @@ public class Node extends Subject implements Comparable<Node> {
         }
         println("");
 
-        for (int i = 0; i < this.getID().toString().length(); i++) {
+        for (int i = 0; i < this.getID().length(); i++) {
             println("Level " + i +  "  Pred: " + this.predecessor[i] + " Succ:" + this.successor[i]);
             for (Node neighbour : this.neighbours[i]) {
                 print("\t" + neighbour.getID() + ", ");

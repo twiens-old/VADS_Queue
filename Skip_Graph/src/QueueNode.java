@@ -9,9 +9,9 @@ public class QueueNode extends Node {
 
     private double rangeStart;
 
-    private List<Message> getPositionMessages;
+    private List<PositionRequestMessage> getPositionMessages;
 
-    private HashMap<UUID, Queue<Message>> returnAddresses;
+    private HashMap<UUID, Queue<PositionRequestMessage>> returnAddresses;
     private HashMap<Integer, String> storedElements;
 
     public QueueNode(String sequence) {
@@ -33,9 +33,9 @@ public class QueueNode extends Node {
     protected void onMessageReceived(Object message) {
         super.onMessageReceived(message);
 
-        if (message instanceof Message && ((Message) message).type == Message.MessageType.GET_POSITION) {
+        if (message instanceof PositionRequestMessage) {
             if (!queueAdministrator) {
-                this.getPositionMessages.add((Message) message);
+                this.getPositionMessages.add((PositionRequestMessage) message);
             } else {
 
             }
@@ -53,27 +53,27 @@ public class QueueNode extends Node {
     }
 
     public void enqueue(String data) {
-        Message getPositionMessage = new Message(null, Message.MessageType.GET_POSITION, new StringBuilder(), this);
-        getPositionMessage.i = 1;
+        PositionRequestMessage getPositionMessage = new PositionRequestMessage(this, 1);
+
         this.sendGetPositionRequestToSmallestNode(getPositionMessage);
     }
 
     private void combine() {
         int i = 0;
-        Queue<Message> q = new LinkedList<>();
-        for (Message message : this.getPositionMessages) {
+        Queue<PositionRequestMessage> q = new LinkedList<>();
+        for (PositionRequestMessage message : this.getPositionMessages) {
             i += message.i;
             q.add(message);
         }
 
-        Message combinedMessage = new Message(null, Message.MessageType.GET_POSITION, new StringBuilder(), this);
+        PositionRequestMessage combinedMessage = new PositionRequestMessage(this, i);
 
         this.returnAddresses.put(combinedMessage.uuid, q);
 
         this.sendGetPositionRequestToSmallestNode(combinedMessage);
     }
 
-    private void sendGetPositionRequestToSmallestNode(Message message) {
+    private void sendGetPositionRequestToSmallestNode(PositionRequestMessage message) {
         TreeSet<Node> allNeighbours = new TreeSet<>();
 
         for (int i = 0; i < this.getID().toString().length(); i++) {
@@ -86,8 +86,7 @@ public class QueueNode extends Node {
         smallestNode.send(message);
     }
 
-    private void handleGetPositionRequests(Message message) {
-        Message intervallMessage = new Message();
+    private void handleGetPositionRequests(PositionRequestMessage message) {
     }
 
     private void testQueueAdministrator() {

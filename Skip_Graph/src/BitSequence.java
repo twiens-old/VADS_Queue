@@ -114,6 +114,10 @@ public class BitSequence {
         return result;
     }
 
+    public int length() {
+        return this.numberOfBits;
+    }
+
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();

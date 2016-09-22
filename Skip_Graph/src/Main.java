@@ -4,23 +4,15 @@
 public class Main {
     public static void main(String[] args) throws InterruptedException {
 
-        //int numberOfTests = 30;
+        int numberOfTests = 1;
 
-        //for (int i = 0; i < numberOfTests; i++) {
-        //    boolean success = testLauf();
+        for (int i = 0; i < numberOfTests; i++) {
+            boolean success = testLauf();
 
-        //    if (!success) {
-        //        break;
-        //    }
-        //}
-
-        QueueNode node1 = new QueueNode("111");
-        QueueNode node2 = new QueueNode("110");
-
-        System.out.println(node1.getID().toInt());
-        System.out.println(HashFunction.hashQueueNode(node1));
-        System.out.println(node2.getID().toInt());
-        System.out.println(HashFunction.hashQueueNode(node2));
+            if (!success) {
+                break;
+            }
+        }
     }
 
     private static boolean testLauf() throws InterruptedException{
@@ -84,9 +76,9 @@ public class Main {
         boolean result = graph.testSkipPlusGraph();
         System.out.println("################ Ergebnis = " + result + " ################\n\n");
 
-        Message[] messages = new Message[10];
+        StringMessage[] messages = new StringMessage[10];
         for (int i = 10; i < 20; i++) {
-            messages[i-10] = new Message(nodes[i+1], Message.MessageType.ROUTING, new StringBuilder("Start: " + nodes[i].getID() + " - Destination: " + nodes[i+1].getID() + "\n"));
+            messages[i-10] = new StringMessage(null, nodes[i], "Start: " + nodes[i].getID() + " - Destination: " + nodes[i+1].getID() + "\n");
 
             nodes[i].send(messages[i-10]);
             Thread.sleep(500);

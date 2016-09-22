@@ -87,8 +87,8 @@ public class SkipPlusGraph {
                 // Nachfolger bestimmen
                 boolean foundSuccessor0 = false;
                 boolean foundSuccessor1 = false;
-                Node successor1 = Node.maxNode;
-                Node successor0 = Node.maxNode;
+                Node successor1 = null;
+                Node successor0 = null;
                 for (Node successor : successors) {
                     if (!foundSuccessor0 && Node.prefixMatch(i, node, successor, 0)) {
                         successor0 = successor;
@@ -119,11 +119,11 @@ public class SkipPlusGraph {
                     }
                 }
 
-                if (successor0.equals(Node.maxNode) && !successor1.equals(Node.maxNode)) {
+                if (successor0 == null && successor1 != null) {
                     ranges[i].setEnd(successor1);
-                } else if (!successor0.equals(Node.maxNode) && successor1.equals(Node.maxNode)) {
+                } else if (successor0 != null && successor1 == null) {
                     ranges[i].setEnd(successor0);
-                } else if (successor0.equals(Node.maxNode) && successor1.equals(Node.maxNode)) {
+                } else if (successor0 == null && successor1 == null) {
                     ranges[i].setEnd(successor0);
                 } else if (successor0.isGreaterThan(successor1)) {
                     ranges[i].setEnd(successor0);
@@ -134,8 +134,8 @@ public class SkipPlusGraph {
                 // Vorgänger bestimmen
                 boolean foundPredecessor0 = false;
                 boolean foundPredecessor1 = false;
-                Node predecessor0 = Node.minNode;
-                Node predecessor1 = Node.minNode;
+                Node predecessor0 = null;
+                Node predecessor1 = null;
                 for (Node predecessor : predecessors) {
                     if (!foundPredecessor0 && Node.prefixMatch(i, node, predecessor, 0)) {
                         foundPredecessor0 = true;
@@ -165,11 +165,11 @@ public class SkipPlusGraph {
                     }
                 }
 
-                if (predecessor0.equals(Node.minNode) && !predecessor1.equals(Node.minNode)) {
+                if (predecessor0 == null && predecessor1 != null) {
                     ranges[i].setBegin(predecessor1);
-                } else if (!predecessor0.equals(Node.minNode) && predecessor1.equals(Node.minNode)) {
+                } else if (predecessor0 != null && predecessor1 == null) {
                     ranges[i].setBegin(predecessor0);
-                } else if (predecessor0.equals(Node.minNode) && predecessor1.equals(Node.minNode)) {
+                } else if (predecessor0 == null && predecessor1 == null) {
                     ranges[i].setBegin(predecessor0);
                 } else if (predecessor0.isLessThan(predecessor1)) {
                     ranges[i].setBegin(predecessor0);
