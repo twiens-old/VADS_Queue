@@ -4,6 +4,18 @@ import java.util.UUID;
  * Created by twiens on 9/14/16.
  */
 public class Message {
+
+
+
+
+    // abstract
+    public final UUID uuid;
+
+    public Node sender;
+    public Node destination;
+    public boolean arrived = false;
+
+    //node
     public enum MessageType {
         LEAVE,
         FORCE_DELETE,
@@ -13,15 +25,16 @@ public class Message {
         GET_POSITION,
         RETURN_POSITION
     }
-
-    public final UUID uuid;
-
-    public Node sender;
-    public Node destination;
     public MessageType type;
+    // + node
+
+    // string
     public StringBuilder message;
-    public boolean arrived = false;
+
+    // positon
     public int i;
+
+    // intervall
     public int intervallBeginning;
     public int intervallEnding;
 
