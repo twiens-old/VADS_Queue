@@ -40,7 +40,7 @@ public class SkipPlusGraph {
                 System.exit(-1);
             }
 
-            nodes.get(responsibleNodePosition).send(node);
+            nodes.get(responsibleNodePosition).send(new NodeMessage(null, nodes.get(responsibleNodePosition), node, NodeMessage.MessageType.INTRODUCE));
         }
 
         nodes.add(node);

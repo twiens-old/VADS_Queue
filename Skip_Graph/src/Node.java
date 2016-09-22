@@ -16,7 +16,7 @@ public class Node extends Subject implements Comparable<Node> {
     /**
      * Identification bit sequence of the destination. (id)
      */
-    private BitSequence ID;
+    protected BitSequence ID;
 
     /**
      * Array that contains the level-i-neighbours of the destination at index i.
@@ -116,6 +116,8 @@ public class Node extends Subject implements Comparable<Node> {
                     break;
                 case FORCE_DELETE:
                     this.neighboursForBiDirection.remove(node);
+                    break;
+                default:
                     break;
             }
         } else if (message instanceof StringMessage) {
