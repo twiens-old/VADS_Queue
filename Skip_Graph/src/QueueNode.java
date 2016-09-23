@@ -40,9 +40,15 @@ public class QueueNode extends Node {
         super.onMessageReceived(message);
 
         if (message instanceof PositionRequestMessage) {
-            this.handleGetPositionRequests((PositionRequestMessage) message);
+            if (!this.queueAdministrator) {
+                this.getPositionMessages.add((PositionRequestMessage) message);
+            } else {
+                this.handleGetPositionRequests((PositionRequestMessage) message);
+            }
         } else if (message instanceof IntervalMessage) {
             this.handleIntervalMessage((IntervalMessage) message);
+        } else if (message instanceof  DataMessage) {
+            this.handleDataMessage((DataMessage) message);
         }
     }
 
@@ -82,6 +88,8 @@ public class QueueNode extends Node {
 
             this.handleGetPositionRequests(combinedMessage);
 
+            println("COMBINE - GET POSITION REQUEST MESSAGES COUNT = " + this.getPositionMessages.size() + " Node: " + this);
+
             this.getPositionMessages.clear();
         }
     }
@@ -89,12 +97,18 @@ public class QueueNode extends Node {
     private void split(IntervalMessage message) {
         Queue<PositionRequestMessage> queue = this.returnAddresses.get(message.requestUuid);
 
+        if (queue == null) {
+            return;
+        }
+
         int intervalStart = message.start;
 
         for (PositionRequestMessage prMessage : queue) {
             prMessage.sender.send(new IntervalMessage(this, prMessage.sender, intervalStart, intervalStart + prMessage.i - 1, prMessage.uuid));
             intervalStart += prMessage.i;
         }
+
+        this.returnAddresses.remove(message.requestUuid);
     }
 
     private void handleGetPositionRequests(PositionRequestMessage message) {
@@ -106,8 +120,6 @@ public class QueueNode extends Node {
 
             message.sender.send(intervalMessage);
         } else {
-            this.getPositionMessages.add(message);
-
             TreeSet<Node> allNeighbours = new TreeSet<>();
 
             for (int i = 0; i < this.getID().toString().length(); i++) {
@@ -130,6 +142,8 @@ public class QueueNode extends Node {
             dataMessage.position = message.start;
 
             println("YO HABEN POSITION ERHALTEN DIGGAH");
+
+            this.sentPositionRequests.remove(message.requestUuid);
 
             this.handleDataMessage(dataMessage);
         } else {
