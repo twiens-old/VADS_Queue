@@ -6,10 +6,10 @@ import java.util.UUID;
 public class IntervalMessage extends AbstractMessage{
 
     protected UUID requestUuid;
-    protected int start;
-    protected int end;
+    protected Integer start;
+    protected Integer end;
 
-    public IntervalMessage(Node sender, Node receiver, int start, int end, UUID requestUuid) {
+    public IntervalMessage(Node sender, Node receiver, Integer start, Integer end, UUID requestUuid) {
         super(sender, receiver);
         this.start = start;
         this.end = end;
