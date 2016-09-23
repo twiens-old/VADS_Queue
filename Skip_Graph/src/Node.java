@@ -409,6 +409,10 @@ public class Node extends Subject implements Comparable<Node> {
                 }
             }
         }
+
+        for (Node node : removedNeighbours) {
+            this.neighbours[i].remove(node);
+        }
     }
 
     /**

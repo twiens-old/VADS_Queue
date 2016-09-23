@@ -7,7 +7,7 @@ public class Main {
         int numberOfTests = 1;
 
         for (int i = 0; i < numberOfTests; i++) {
-            boolean success = testLauf();
+            boolean success = testGetPositionRequest();
 
             if (!success) {
                 break;
@@ -15,7 +15,58 @@ public class Main {
         }
     }
 
-    private static boolean testLauf() throws InterruptedException{
+    private static boolean testGetPositionRequest() throws InterruptedException {
+        UniqueRandomBitStringGenerator.ResetBitStrings();
+
+        int numberOfNodes = 30;
+
+        int numberOfBits = 6;
+
+        SkipPlusGraph graph = new SkipPlusGraph(numberOfBits);
+        QueueNode[] nodes = new QueueNode[(int) Math.pow(2, numberOfBits)];
+
+        UniqueRandomBitStringGenerator.uniqueBitStrings.add(new BitSequence("000000"));
+        for (int i = 1; i < numberOfNodes; i++) {
+            BitSequence sequence = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(numberOfBits);
+
+            QueueNode node =  new QueueNode(sequence.toString());
+            nodes[i] = node;
+        }
+        nodes[0] = new QueueNode("000000");
+
+        System.out.println("Finished generating BitSequences.");
+
+        for (int i = 0; i < numberOfNodes; i++) {
+            graph.join(nodes[i]);
+            Thread.sleep(500);
+        }
+
+        System.out.println("Finished initializing starting graph.");
+
+        // 2 sekunden laufen lassen
+        Thread.sleep(1000);
+
+        System.out.println("");
+        graph.printNeighbourHoodForAllLevels();
+        System.out.println("");
+        System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
+        boolean result = graph.testSkipPlusGraph();
+        System.out.println("################ Ergebnis = " + result + " ################\n\n");
+
+        nodes[4].enqueue(new DataMessage(null, null, "Test Data", 0));
+
+        Thread.sleep(Integer.MAX_VALUE);
+
+        for (int i = 0; i < numberOfNodes; i++) {
+            if (nodes[i] != null) {
+                nodes[i].stopSubject();
+            }
+        }
+
+        return result;
+    }
+
+    private static boolean testLaufSkipGraph() throws InterruptedException{
         UniqueRandomBitStringGenerator.ResetBitStrings();
 
         int numberOfNodes = 30;

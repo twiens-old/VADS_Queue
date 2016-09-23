@@ -5,7 +5,7 @@ import java.util.*;
  */
 public class UniqueRandomBitStringGenerator {
 
-    private static ArrayList<BitSequence> uniqueBitStrings = new ArrayList<>();
+    public static ArrayList<BitSequence> uniqueBitStrings = new ArrayList<>();
 
     private static List<BitSequence> synchronizedList = Collections.synchronizedList(uniqueBitStrings);
 

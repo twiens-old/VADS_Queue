@@ -40,11 +40,9 @@ public class QueueNode extends Node {
         super.onMessageReceived(message);
 
         if (message instanceof PositionRequestMessage) {
-            if (!queueAdministrator) {
-                this.getPositionMessages.add((PositionRequestMessage) message);
-            } else {
-
-            }
+            this.handleGetPositionRequests((PositionRequestMessage) message);
+        } else if (message instanceof IntervalMessage) {
+            this.handleIntervalMessage((IntervalMessage) message);
         }
     }
 
@@ -56,28 +54,36 @@ public class QueueNode extends Node {
         super.onTimeout();
 
         this.combine();
+        this.testQueueAdministrator();
     }
 
     public void enqueue(DataMessage data) {
+        println("Enquqing new Data Message " + this);
+
         PositionRequestMessage getPositionMessage = new PositionRequestMessage(this, 1);
         this.sentPositionRequests.put(getPositionMessage.uuid, data);
 
-        this.sendGetPositionRequestToSmallestNode(getPositionMessage);
+        this.handleGetPositionRequests(getPositionMessage);
     }
 
     private void combine() {
-        int i = 0;
-        Queue<PositionRequestMessage> q = new LinkedList<>();
-        for (PositionRequestMessage message : this.getPositionMessages) {
-            i += message.i;
-            q.add(message);
+        if (!this.getPositionMessages.isEmpty()) {
+            int i = 0;
+            Queue<PositionRequestMessage> q = new LinkedList<>();
+
+            for (PositionRequestMessage message : this.getPositionMessages) {
+                i += message.i;
+                q.add(message);
+            }
+
+            PositionRequestMessage combinedMessage = new PositionRequestMessage(this, i);
+
+            this.returnAddresses.put(combinedMessage.uuid, q);
+
+            this.handleGetPositionRequests(combinedMessage);
+
+            this.getPositionMessages.clear();
         }
-
-        PositionRequestMessage combinedMessage = new PositionRequestMessage(this, i);
-
-        this.returnAddresses.put(combinedMessage.uuid, q);
-
-        this.sendGetPositionRequestToSmallestNode(combinedMessage);
     }
 
     private void split(IntervalMessage message) {
@@ -91,24 +97,30 @@ public class QueueNode extends Node {
         }
     }
 
-    private void sendGetPositionRequestToSmallestNode(PositionRequestMessage message) {
-        TreeSet<Node> allNeighbours = new TreeSet<>();
-
-        for (int i = 0; i < this.getID().toString().length(); i++) {
-            allNeighbours.addAll(neighbours[i]);
-        }
-        allNeighbours.addAll(neighboursForBiDirection);
-
-        Node smallestNode = allNeighbours.first();
-
-        smallestNode.send(message);
-    }
-
     private void handleGetPositionRequests(PositionRequestMessage message) {
-        IntervalMessage intervalMessage = new IntervalMessage(this, message.sender, this.last + 1, this.last + message.i, message.uuid);
-        this.last += message.i;
+        if (this.queueAdministrator) {
+            println("Queue Administrator received Position Request");
 
-        message.sender.send(intervalMessage);
+            IntervalMessage intervalMessage = new IntervalMessage(this, message.sender, this.last + 1, this.last + message.i, message.uuid);
+            this.last += message.i;
+
+            message.sender.send(intervalMessage);
+        } else {
+            this.getPositionMessages.add(message);
+
+            TreeSet<Node> allNeighbours = new TreeSet<>();
+
+            for (int i = 0; i < this.getID().toString().length(); i++) {
+                allNeighbours.addAll(neighbours[i]);
+            }
+            allNeighbours.addAll(neighboursForBiDirection);
+
+            Node smallestNode = allNeighbours.first();
+
+            println("Sending Position Request Message - Sender: " + this + " Receiver: " + smallestNode);
+
+            smallestNode.send(message);
+        }
     }
 
     private void handleIntervalMessage(IntervalMessage message) {
@@ -117,6 +129,8 @@ public class QueueNode extends Node {
             DataMessage dataMessage = this.sentPositionRequests.get(message.requestUuid);
             dataMessage.position = message.start;
 
+            println("YO HABEN POSITION ERHALTEN DIGGAH");
+
             this.handleDataMessage(dataMessage);
         } else {
             this.split(message);
@@ -124,7 +138,7 @@ public class QueueNode extends Node {
     }
 
     private void handleDataMessage(DataMessage message) {
-        float positionHash = HashFunction.hashPosition(message.position);
+        double positionHash = HashFunction.hashPosition(message.position);
 
         TreeSet<QueueNode> allNeighbours = new TreeSet<>();
         for (int i = 0; i < this.getID().length(); i++) {
@@ -140,14 +154,17 @@ public class QueueNode extends Node {
         // send right
         QueueNode nextQueueNode = allNeighbours.higher(this);
 
+        println("POSITION HASH = " + positionHash + " - RANGE START = " + this.rangeStart);
+
         if (positionHash >= this.rangeStart) {
+            println("PositionHash > rangeStart");
 
             if (nextQueueNode != null && nextQueueNode.rangeStart < positionHash) {
                 // next responsible
 
                 // responsible node is somewhere right of us
                 TreeSet<QueueNode> nodesGreaterThanUs = (TreeSet<QueueNode>) allNeighbours.tailSet(this, false);
-                Iterator<QueueNode> iterator = nodesGreaterThanUs.iterator();
+                Iterator<QueueNode> iterator = nodesGreaterThanUs.descendingIterator();
 
                 QueueNode current = iterator.next();
 
@@ -160,13 +177,17 @@ public class QueueNode extends Node {
                     current = next;
                 }
 
+                println("Sending Data from " + this + " to " + current);
+
                 current.send(message);
 
             } else if (nextQueueNode == null && zirkNode.rangeStart < positionHash) {
+                println("zirkNode < positionHash");
                 // zirkNode responsilble
                 this.zirkNode.send(message);
             } else {
                 //we are responsilble
+                println("Storing Element at Node " + this);
                 this.storedElements.put(message.position, message);
             }
         }
@@ -175,13 +196,15 @@ public class QueueNode extends Node {
         QueueNode prevQueueNode = allNeighbours.lower(this);
 
         if (positionHash < this.rangeStart) {
+            println("PositionHash < rangeStart");
             if (prevQueueNode == null) {
                 // zirklärer Knoten zuständig
+                println("ZirkNode responsible");
                 this.zirkNode.send(message);
             } else {
                 // responsible node is somewhere left of us
                 TreeSet<QueueNode> nodesLessThanUs = (TreeSet<QueueNode>) allNeighbours.headSet(this);
-                Iterator<QueueNode> iterator = nodesLessThanUs.descendingIterator();
+                Iterator<QueueNode> iterator = nodesLessThanUs.iterator();
 
                 QueueNode current = iterator.next();
 
@@ -194,6 +217,7 @@ public class QueueNode extends Node {
                     current = next;
                 }
 
+                println("Sending Data from " + this + " to " + current);
                 current.send(message);
             }
         }
@@ -207,6 +231,12 @@ public class QueueNode extends Node {
                 break;
             }
         }
+
         this.queueAdministrator = temp;
+    }
+
+    @Override
+    public String toString() {
+        return this.getID() + " (" + this.rangeStart + ")";
     }
 }

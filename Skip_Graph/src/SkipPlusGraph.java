@@ -204,6 +204,17 @@ public class SkipPlusGraph {
                             System.out.println(" BUT should contain " + n.getID());
                             return false;
                         }
+                    } else {
+                        if (node.neighbours[i].contains(n)) {
+                            System.out.println("Neighbourhood is wrong");
+                            System.out.println("Level: " + i);
+                            System.out.println("Node: " + node.getID());
+                            System.out.println("Neighbourhoud");
+                            node.printNeighbourhood(i);
+                            System.out.println(" BUT should NOT contain " + n.getID());
+
+                            return false;
+                        }
                     }
                 }
             }
