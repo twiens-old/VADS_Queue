@@ -53,7 +53,12 @@ public class Main {
         boolean result = graph.testSkipPlusGraph();
         System.out.println("################ Ergebnis = " + result + " ################\n\n");
 
-        nodes[4].enqueue(new DataMessage(null, null, "Test Data", 0));
+        nodes[4].enqueue(new DataMessage(null, null, "Test Data 1", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[6].enqueue(new DataMessage(null, null, "Test Data 2", 0, AbstractMessage.MessageType.ENQUEUE));
+
+        Thread.sleep(10000);
+
+        nodes[1].dequeue();
 
         Thread.sleep(Integer.MAX_VALUE);
 

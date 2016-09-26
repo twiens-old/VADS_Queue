@@ -5,6 +5,15 @@ import java.util.UUID;
  */
 public abstract class AbstractMessage {
 
+    public enum MessageType {
+        INTRODUCE,
+        FORCE,
+        FORCE_DELETE,
+        LEAVE,
+        ENQUEUE,
+        DEQUEUE
+    }
+
     protected UUID uuid;
     protected Node sender;
     protected Node receiver;

@@ -521,21 +521,22 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     // TODO: falls destination nicht existiert???
-    public void routing(StringMessage message) {
+    public void routing(AbstractMessage message) {
         Node destination = message.receiver;
 
-        message.message.append("Current Hop: " + this.getID() + "\n");
+//        message.message.append("Current Hop: " + this.getID() + "\n");
 
         if (destination.equals(this)) {
             message.arrived = true;
-            message.message.append("Message arrived at Destination = " + destination.getID() + " Message = \n");
+            println("Data Arrived -> " + ((DataMessage)message).data);
+//            message.message.append("Message arrived at Destination = " + destination.getID() + " Message = \n");
             return;
         }
 
         int numberOfMatchingPrefixes = this.getNumberOfMatchingPrefixes(destination);
         boolean bit = destination.getID().getBit(numberOfMatchingPrefixes+1);
 
-        message.message.append("Number of Matching Prefixes = " + numberOfMatchingPrefixes + " - Bit at index + 1 = " + bit + "\n");
+//        message.message.append("Number of Matching Prefixes = " + numberOfMatchingPrefixes + " - Bit at index + 1 = " + bit + "\n");
 
         Node pred0 = this.predecessor[numberOfMatchingPrefixes].getNodeZero();
         Node pred1 = this.predecessor[numberOfMatchingPrefixes].getNodeOne();

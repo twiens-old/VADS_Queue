@@ -3,12 +3,7 @@
  */
 public class NodeMessage extends AbstractMessage {
 
-    public enum MessageType {
-        INTRODUCE,
-        FORCE,
-        FORCE_DELETE,
-        LEAVE
-    }
+
 
     protected Node node;
     protected MessageType type;
