@@ -2,12 +2,12 @@
  * Created by twiens on 24.08.16.
  */
 public class Main {
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
 
-        int numberOfTests = 1;
+        int numberOfTests = 40;
 
         for (int i = 0; i < numberOfTests; i++) {
-            boolean success = testGetPositionRequest();
+            boolean success = testLaufSkipGraph();
 
             if (!success) {
                 break;
@@ -15,7 +15,7 @@ public class Main {
         }
     }
 
-    private static boolean testGetPositionRequest() throws InterruptedException {
+    private static boolean testGetPositionRequest() throws Exception {
         UniqueRandomBitStringGenerator.ResetBitStrings();
 
         int numberOfNodes = 30;
@@ -53,12 +53,35 @@ public class Main {
         boolean result = graph.testSkipPlusGraph();
         System.out.println("################ Ergebnis = " + result + " ################\n\n");
 
+        if (!result) {
+            throw new Exception("Skip+ Graph is wrong!");
+        }
+
         nodes[4].enqueue(new DataMessage(null, null, "Test Data 1", 0, AbstractMessage.MessageType.ENQUEUE));
-        nodes[6].enqueue(new DataMessage(null, null, "Test Data 2", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[0].enqueue(new DataMessage(null, null, "Test Data 2", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[9].enqueue(new DataMessage(null, null, "Test Data 3", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[4].enqueue(new DataMessage(null, null, "Test Data 4", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 5", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 6", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 7", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 8", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 9", 0, AbstractMessage.MessageType.ENQUEUE));
+        nodes[8].enqueue(new DataMessage(null, null, "Test Data 10", 0, AbstractMessage.MessageType.ENQUEUE));
 
         Thread.sleep(10000);
 
         nodes[1].dequeue();
+        nodes[2].dequeue();
+        nodes[3].dequeue();
+        nodes[4].dequeue();
+        nodes[1].dequeue();
+        nodes[2].dequeue();
+        nodes[3].dequeue();
+        nodes[4].dequeue();
+        nodes[1].dequeue();
+        nodes[2].dequeue();
+        nodes[3].dequeue();
+        nodes[4].dequeue();
 
         Thread.sleep(Integer.MAX_VALUE);
 

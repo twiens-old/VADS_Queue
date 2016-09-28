@@ -528,7 +528,11 @@ public class Node extends Subject implements Comparable<Node> {
 
         if (destination.equals(this)) {
             message.arrived = true;
-            println("Data Arrived -> " + ((DataMessage)message).data);
+            if (message instanceof DataMessage) {
+                println("Data Arrived -> " + ((DataMessage)message).data);
+            } else if (message instanceof StringMessage) {
+                println("Data Arrived -> " + ((StringMessage)message).message);
+            }
 //            message.message.append("Message arrived at Destination = " + destination.getID() + " Message = \n");
             return;
         }
