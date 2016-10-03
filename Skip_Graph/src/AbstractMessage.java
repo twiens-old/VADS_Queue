@@ -11,7 +11,8 @@ public abstract class AbstractMessage {
         FORCE_DELETE,
         LEAVE,
         ENQUEUE,
-        DEQUEUE
+        DEQUEUE,
+        CIRCULAR_REFERENCE
     }
 
     protected UUID uuid;

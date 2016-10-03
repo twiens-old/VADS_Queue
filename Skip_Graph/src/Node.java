@@ -40,6 +40,8 @@ public class Node extends Subject implements Comparable<Node> {
      */
     public Pair[] successor;
 
+    protected Node zirkNode;
+
     /**
      * Contains all the nodes received by messages.
      */
@@ -117,6 +119,9 @@ public class Node extends Subject implements Comparable<Node> {
                 case FORCE_DELETE:
                     this.neighboursForBiDirection.remove(node);
                     break;
+                case CIRCULAR_REFERENCE:
+                    this.handleCircularReference((NodeMessage) message);
+                    break;
                 default:
                     break;
             }
@@ -137,7 +142,11 @@ public class Node extends Subject implements Comparable<Node> {
             for (Node neighbour : neighbours[i]) {
                 neighbour.send(new NodeMessage(this, neighbour, this, NodeMessage.MessageType.INTRODUCE));
             }
+
+            this.updateNeighbours(i);
         }
+
+        this.checkAndSendCircularReference();
     }
 
     private void linearizeRule1a() {
@@ -335,6 +344,26 @@ public class Node extends Subject implements Comparable<Node> {
      */
     public BitSequence getID() {
         return this.ID;
+    }
+
+    public void checkAndSendCircularReference() {
+        if (this.predecessor[0].getNodeOne() == null && this.predecessor[0].getNodeZero() == null) {
+            NodeMessage circMessage = new NodeMessage(this, null, this, AbstractMessage.MessageType.CIRCULAR_REFERENCE);
+            this.sendToLargestNode(circMessage);
+        }
+
+        if (this.successor[0].getNodeOne() == null && this.successor[0].getNodeZero() == null) {
+            NodeMessage circMessage = new NodeMessage(this, null, this, AbstractMessage.MessageType.CIRCULAR_REFERENCE);
+            this.sendToSmallestNode(circMessage);
+        }
+
+        if (this.zirkNode != null && this.zirkNode.getID().isGreaterThan(this.getID()) && (this.predecessor[0].getNodeOne() != null || this.predecessor[0].getNodeZero() != null)) {
+            this.zirkNode = null;
+        }
+
+        if (this.zirkNode != null && this.zirkNode.getID().isLessThan(this.getID()) && (this.successor[0].getNodeOne() != null || this.successor[0].getNodeZero() != null)) {
+            this.zirkNode = null;
+        }
     }
 
     // TODO: Exceptions für fehlerhafte Ranges (z.B. Anfang > Ende)
@@ -566,6 +595,62 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
+    public void handleCircularReference(NodeMessage message) {
+        if (message.sender.getID().isLessThan(this.getID())) {
+            if (successor[0].getNodeZero() != null || successor[0].getNodeOne() != null) {
+                // rechts weiterleiten
+                this.sendToLargestNode(message);
+            } else {
+                if (this.zirkNode == null || message.node.getID().isLessThan(this.zirkNode.getID())) {
+                    this.zirkNode = message.node;
+                }
+            }
+        }
+
+        if (message.sender.getID().isGreaterThan(this.getID())) {
+            if (predecessor[0].getNodeZero() != null || predecessor[0].getNodeOne() != null) {
+                // links weiterleiten
+                this.sendToSmallestNode(message);
+            } else {
+                if (this.zirkNode == null || message.node.getID().isGreaterThan(this.zirkNode.getID())) {
+                    this.zirkNode = message.node;
+                }
+            }
+        }
+    }
+
+    protected void sendToSmallestNode(AbstractMessage message) {
+        TreeSet<Node> allNeighbours = new TreeSet<>();
+
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            allNeighbours.addAll(neighbours[i]);
+        }
+        allNeighbours.addAll(neighboursForBiDirection);
+        SortedSet<Node> nodesLessThanMe = allNeighbours.headSet(this, false);
+
+        if (!nodesLessThanMe.isEmpty()) {
+            Node smallestNode = nodesLessThanMe.first();
+
+            smallestNode.send(message);
+        }
+    }
+
+    protected void sendToLargestNode(AbstractMessage message) {
+        TreeSet<Node> allNeighbours = new TreeSet<>();
+
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            allNeighbours.addAll(neighbours[i]);
+        }
+        allNeighbours.addAll(neighboursForBiDirection);
+        SortedSet<Node> nodesGreaterThanMe = allNeighbours.tailSet(this, false);
+
+        if (!nodesGreaterThanMe.isEmpty()) {
+            Node largestNode = nodesGreaterThanMe.last();
+
+            largestNode.send(message);
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -625,6 +710,15 @@ public class Node extends Subject implements Comparable<Node> {
         for (Node neighbour : this.neighboursForBiDirection) {
             print("\t" + neighbour.getID() + ", ");
         }
+        println("");
+
+        String zirkNode = "NULL";
+        if (this.zirkNode != null) {
+            zirkNode = this.zirkNode.getID().toString();
+        }
+
+        println("Zirk Node: ");
+        print("\t" + zirkNode + ", ");
         println("");
 
         println("########################################################################");

@@ -27,6 +27,18 @@ public class Range {
 
     @Override
     public String toString(){
-        return "[" + this.begin.getID() + ", " + this.end.getID() + "]";
+        String begin = "null";
+
+        if (this.begin != null) {
+            begin = this.begin.getID().toString();
+        }
+
+        String end = "null";
+
+        if (this.end != null) {
+            end = this.end.getID().toString();
+        }
+
+        return "[" + begin + ", " + end + "]";
     }
 }

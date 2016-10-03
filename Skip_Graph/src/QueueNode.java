@@ -9,8 +9,6 @@ public class QueueNode extends Node {
     private boolean queueAdministrator;
     private int first, last;
 
-    private QueueNode zirkNode;
-
     private double rangeStart;
 
     private List<PositionRequestMessage> getPositionMessages;
@@ -186,21 +184,6 @@ public class QueueNode extends Node {
         }
     }
 
-    private void sendToSmallestNode(AbstractMessage message) {
-        TreeSet<Node> allNeighbours = new TreeSet<>();
-
-        for (int i = 0; i < this.getID().toString().length(); i++) {
-            allNeighbours.addAll(neighbours[i]);
-        }
-        allNeighbours.addAll(neighboursForBiDirection);
-
-        Node smallestNode = allNeighbours.first();
-
-        println("Sending Position Request Message - Sender: " + this + " Receiver: " + smallestNode);
-
-        smallestNode.send(message);
-    }
-
     private void handleIntervalMessage(IntervalMessage message) {
         if (this.sentPositionRequests.containsKey(message.requestUuid)) {
             if (message.type == IntervalMessage.MessageType.ENQUEUE) {
@@ -274,7 +257,7 @@ public class QueueNode extends Node {
 
                 current.send(message);
 
-            } else if (nextQueueNode == null && zirkNode.rangeStart < positionHash) {
+            } else if (nextQueueNode == null && ((QueueNode)zirkNode).rangeStart < positionHash) {
                 println("zirkNode < positionHash");
                 // zirkNode responsilble
                 this.zirkNode.send(message);

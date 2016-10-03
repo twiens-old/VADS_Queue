@@ -67,10 +67,16 @@ public class SkipPlusGraph {
     }
 
     public boolean testSkipPlusGraph() {
+        StringBuilder sb = new StringBuilder();
+        boolean result = true;
+
         TreeSet<Node> treeSet = new TreeSet<>();
         for (Node node : nodes) {
             treeSet.add(node);
         }
+
+        Node firstNode = treeSet.first();
+        Node lastNode = treeSet.last();
 
         for (Node node : nodes) {
             // hole alle Nachfolger vom aktuellen Knoten
@@ -95,10 +101,10 @@ public class SkipPlusGraph {
                         foundSuccessor0 = true;
 
                         if (node.successor[i].getNodeZero() != successor) {
-                            System.out.println("Successor 0 is wrong");
-                            System.out.println("Level: " + i + " Node: " + node.getID());
-                            System.out.println("Successor: " + node.successor[i].getNodeZero().getID() + " BUT should be " + successor.getID());
-                            return false;
+                            sb.append("Successor 0 is wrong\n");
+                            sb.append("Level: " + i + " Node: " + node.getID() + "\n");
+                            sb.append("Successor: " + node.successor[i].getNodeZero().getID() + " BUT should be " + successor.getID() + "\n");
+                            result = false;
                         }
                     }
 
@@ -106,15 +112,15 @@ public class SkipPlusGraph {
                         successor1 = successor;
                         foundSuccessor1 = true;
                         if (node.successor[i].getNodeOne() != successor) {
-                            System.out.println("Successor 1 is wrong");
-                            System.out.println("Level: " + i + " Node: " + node.getID());
+                            sb.append("Successor 1 is wrong\n");
+                            sb.append("Level: " + i + " Node: " + node.getID() + "\n");
                             if (node.successor[i].getNodeOne() != null) {
-                                System.out.println("Successor: " + node.successor[i].getNodeOne().getID() + " BUT should be " + successor.getID());
+                                sb.append("Successor: " + node.successor[i].getNodeOne().getID() + " BUT should be " + successor.getID() + "\n");
                             } else {
-                                System.out.println("Successor: is null BUT should be " + successor.getID());
+                                sb.append("Successor: is null BUT should be " + successor.getID() + "\n");
                             }
 
-                            return false;
+                            result = false;
                         }
                     }
                 }
@@ -140,15 +146,15 @@ public class SkipPlusGraph {
                     if (!foundPredecessor0 && Node.prefixMatch(i, node, predecessor, 0)) {
                         foundPredecessor0 = true;
                         if (node.predecessor[i].getNodeZero() != predecessor) {
-                            System.out.println("Predecessor 0 is wrong");
-                            System.out.println("Level: " + i + " Node: " + node.getID());
+                            sb.append("Predecessor 0 is wrong\n");
+                            sb.append("Level: " + i + " Node: " + node.getID() + "\n");
                             if (node.predecessor[i].getNodeZero() != null) {
-                                System.out.println("Predecessor: " + node.predecessor[i].getNodeZero().getID() + " BUT should be " + predecessor.getID());
+                                sb.append("Predecessor: " + node.predecessor[i].getNodeZero().getID() + " BUT should be " + predecessor.getID() + "\n");
                             } else {
-                                System.out.println("Predecessor: is null BUT should be " + predecessor.getID());
+                                sb.append("Predecessor: is null BUT should be " + predecessor.getID() + "\n");
                             }
 
-                            return false;
+                            result = false;
                         }
 
                         predecessor0 = predecessor;
@@ -157,8 +163,8 @@ public class SkipPlusGraph {
                     if (!foundPredecessor1 && Node.prefixMatch(i, node, predecessor, 1)) {
                         foundPredecessor1 = true;
                         if (node.predecessor[i].getNodeOne() != predecessor) {
-                            System.out.println("Predecessor 1 is wrong");
-                            return false;
+                            sb.append("Predecessor 1 is wrong\n");
+                            result = false;
                         }
 
                         predecessor1 = predecessor;
@@ -179,48 +185,78 @@ public class SkipPlusGraph {
 
                 // vergleiche Ranges
                 if (node.range[i].getBegin() != ranges[i].getBegin()) {
-                    System.out.println("Range begin is wrong");
-                    System.out.println("Level: " + i);
-                    System.out.println("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i]);
-                    return false;
+                    sb.append("Range begin is wrong\n");
+                    sb.append("Level: " + i + "\n");
+                    sb.append("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i] + "\n");
+                    return result = false;
                 }
 
                 if (node.range[i].getEnd() != ranges[i].getEnd()) {
-                    System.out.println("Range end is wrong");
-                    System.out.println("Level: " + i);
-                    System.out.println("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i]);
-                    return false;
+                    sb.append("Range end is wrong\n");
+                    sb.append("Level: " + i + "\n");
+                    sb.append("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i] + "\n");
+                    result = false;
                 }
 
                 // vergleiche Nachbarschaften
                 for (Node n : nodes) {
                     if (!n.equals(node) && node.range[i].isNodeInsideRange(n) && node.prefixMatch(i, n)) {
                         if (!node.neighbours[i].contains(n)) {
-                            System.out.println("Neighbourhood is wrong");
-                            System.out.println("Level: " + i);
-                            System.out.println("Node: " + node.getID());
-                            System.out.println("Neighbourhoud");
-                            node.printNeighbourhood(i);
-                            System.out.println(" BUT should contain " + n.getID());
-                            return false;
+                            sb.append("Neighbourhood is wrong\n");
+                            sb.append("Level: " + i + "\n");
+                            sb.append("Node: " + node.getID() + "\n");
+                            sb.append("Neighbourhoud\n");
+//                            node.printNeighbourhood(i);
+                            sb.append(" BUT should contain " + n.getID() + "\n");
+                            result = false;
                         }
                     } else {
                         if (node.neighbours[i].contains(n)) {
-                            System.out.println("Neighbourhood is wrong");
-                            System.out.println("Level: " + i);
-                            System.out.println("Node: " + node.getID());
-                            System.out.println("Neighbourhoud");
-                            node.printNeighbourhood(i);
-                            System.out.println(" BUT should NOT contain " + n.getID());
+                            sb.append("Neighbourhood is wrong\n");
+                            sb.append("Level: " + i + "\n");
+                            sb.append("Node: " + node.getID() + "\n");
+                            sb.append("Neighbourhoud\n");
+//                            node.printNeighbourhood(i);
+                            sb.append(" BUT should NOT contain " + n.getID() + "\n");
 
-                            return false;
+                            result = false;
                         }
                     }
                 }
             }
+
+            // checke Zirkulären Knoten
+            if (node.equals(firstNode)) {
+                if (!node.zirkNode.equals(lastNode)) {
+                    sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + lastNode.getID());
+
+                    result = false;
+                }
+            }
+
+            if (node.equals(lastNode)) {
+                if (node.equals(lastNode) && !node.zirkNode.equals(firstNode)){
+                    sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + firstNode.getID());
+
+                    result = false;
+                }
+            }
+
+            if (!node.equals(firstNode) && !node.equals(lastNode)) {
+                if (node.zirkNode != null) {
+                    sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be NULL");
+
+                    result = false;
+                }
+            }
         }
 
-        return true;
+        if (!result) {
+            this.printNeighbourHoodForAllLevels();
+            System.out.println(sb.toString());
+        }
+
+        return result;
     }
 
     private static int randInt(int min, int max) {

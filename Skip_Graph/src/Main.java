@@ -7,7 +7,7 @@ public class Main {
         int numberOfTests = 40;
 
         for (int i = 0; i < numberOfTests; i++) {
-            boolean success = testLaufSkipGraph();
+            boolean success = testGetPositionRequest();
 
             if (!success) {
                 break;
@@ -26,13 +26,13 @@ public class Main {
         QueueNode[] nodes = new QueueNode[(int) Math.pow(2, numberOfBits)];
 
         UniqueRandomBitStringGenerator.uniqueBitStrings.add(new BitSequence("000000"));
-        for (int i = 1; i < numberOfNodes; i++) {
+        for (int i = 0; i < numberOfNodes; i++) {
             BitSequence sequence = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(numberOfBits);
 
             QueueNode node =  new QueueNode(sequence.toString());
             nodes[i] = node;
         }
-        nodes[0] = new QueueNode("000000");
+//        nodes[0] = new QueueNode("000000");
 
         System.out.println("Finished generating BitSequences.");
 
@@ -46,9 +46,6 @@ public class Main {
         // 2 sekunden laufen lassen
         Thread.sleep(1000);
 
-        System.out.println("");
-        graph.printNeighbourHoodForAllLevels();
-        System.out.println("");
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
         System.out.println("################ Ergebnis = " + result + " ################\n\n");
@@ -83,7 +80,7 @@ public class Main {
         nodes[3].dequeue();
         nodes[4].dequeue();
 
-        Thread.sleep(Integer.MAX_VALUE);
+        Thread.sleep(10000);
 
         for (int i = 0; i < numberOfNodes; i++) {
             if (nodes[i] != null) {
