@@ -1,7 +1,7 @@
+import oracle.jrockit.jfr.events.Bits;
+
 import java.rmi.UnexpectedException;
-import java.util.Iterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Created by twiens, fischerr, jeromeK on 8/23/16.
@@ -13,6 +13,11 @@ import java.util.TreeSet;
  * @version 0.1
  */
 public class Node extends Subject implements Comparable<Node> {
+    private final int INITIALISATION_PAHSE = 100;
+    private final int HEATBEAT_WINDOW =20;
+
+    private int initialCounter = 0;
+
     /**
      * Identification bit sequence of the destination. (id)
      */
@@ -34,6 +39,8 @@ public class Node extends Subject implements Comparable<Node> {
      * Array that contains the level-i-predecessors of the destination at index i.
      */
     public Pair[] predecessor;
+
+    public HashMap<BitSequence, Integer> timeoutCounters = new HashMap<>();
 
     /**
      * Array that contains the level-i-predecessors of the destination at index i.
@@ -114,6 +121,7 @@ public class Node extends Subject implements Comparable<Node> {
                     this.linearize(node);
                     break;
                 case FORCE:
+                    this.timeoutCounters.put(node.getID(), 0);
                     this.neighboursForBiDirection.add(node);
                     break;
                 case FORCE_DELETE:
@@ -127,6 +135,8 @@ public class Node extends Subject implements Comparable<Node> {
             }
         } else if (message instanceof StringMessage) {
             this.routing((StringMessage)message);
+        } else if (message instanceof HeartbeatMessage) {
+            this.timeoutCounters.put(((HeartbeatMessage) message).sender.getID(), 0);
         }
     }
 
@@ -136,6 +146,8 @@ public class Node extends Subject implements Comparable<Node> {
     @Override
     protected void onTimeout() {
         this.heartbeat();
+        this.checkTimeoutCounters();
+        
         this.linearizeRule1a();
         this.bridgeRule1b();
 
@@ -151,7 +163,69 @@ public class Node extends Subject implements Comparable<Node> {
     }
 
     private void heartbeat() {
+        HeartbeatMessage heartbeat = new HeartbeatMessage(this);
 
+        for (int i = 0; i < this.getID().toString().length(); i++) {
+            for (Node neighbor : this.neighbours[i]) {
+                neighbor.send(heartbeat);
+            }
+        }
+
+        for (Node neighbour : this.neighboursForBiDirection) {
+            neighbour.send(heartbeat);
+        }
+
+        if (this.zirkNode != null) {
+            this.zirkNode.send(heartbeat);
+        }
+    }
+    
+    private void checkTimeoutCounters() {
+        if (this.initialCounter > INITIALISATION_PAHSE) {
+            Iterator<Map.Entry<BitSequence, Integer>> it = this.timeoutCounters.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<BitSequence, Integer> entry = it.next();
+
+                BitSequence nodeId = entry.getKey();
+                int counter = entry.getValue();
+
+                if (this.zirkNode != null && nodeId.equals(this.zirkNode.getID())) {
+                    println("[" + this.getID() + "] ZirkNode: " + nodeId + " - Counter: " + counter);
+                }
+
+                if (counter > HEATBEAT_WINDOW) {
+                    it.remove();
+
+                    for (int i = 0; i < this.getID().toString().length(); i++) {
+                        Iterator<Node> neighborIt = this.neighbours[i].iterator();
+                        while (neighborIt.hasNext()) {
+                            Node neighbor = neighborIt.next();
+
+                            if (neighbor.equals(nodeId)) {
+                                neighborIt.remove();
+                            }
+                        }
+                    }
+
+                    Iterator<Node> neighborIt = this.neighboursForBiDirection.iterator();
+                    while (neighborIt.hasNext()) {
+                        Node neighbor = neighborIt.next();
+
+                        if (neighbor.equals(nodeId)) {
+                            neighborIt.remove();
+                        }
+                    }
+
+                    if (this.zirkNode != null && this.zirkNode.getID().equals(nodeId)) {
+                        this.zirkNode = null;
+                    }
+                } else {
+                    this.timeoutCounters.put(nodeId, ++counter);
+                }
+            }
+        } else {
+            this.initialCounter++;
+        }
     }
 
     private void linearizeRule1a() {
@@ -255,6 +329,7 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
+                            this.timeoutCounters.put(v.getID(), 0);
                             this.neighbours[i].add(v);
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
@@ -272,6 +347,7 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
+                            this.timeoutCounters.put(v.getID(), 0);
                             this.neighbours[i].add(v);
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
@@ -292,6 +368,7 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
+                            this.timeoutCounters.put(v.getID(), 0);
                             this.neighbours[i].add(v);
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
@@ -310,6 +387,7 @@ public class Node extends Subject implements Comparable<Node> {
                         this.updateNeighbours(i);
 
                         if (!this.neighbours[i].contains(v)) {
+                            this.timeoutCounters.put(v.getID(), 0);
                             this.neighbours[i].add(v);
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.INTRODUCE));
                             v.send(new NodeMessage(this, v, this, NodeMessage.MessageType.FORCE));
@@ -607,6 +685,7 @@ public class Node extends Subject implements Comparable<Node> {
                 this.sendToLargestNode(message);
             } else {
                 if (this.zirkNode == null || message.node.getID().isLessThan(this.zirkNode.getID())) {
+                    this.timeoutCounters.put(message.node.getID(), 0);
                     this.zirkNode = message.node;
                 }
             }
@@ -618,6 +697,7 @@ public class Node extends Subject implements Comparable<Node> {
                 this.sendToSmallestNode(message);
             } else {
                 if (this.zirkNode == null || message.node.getID().isGreaterThan(this.zirkNode.getID())) {
+                    this.timeoutCounters.put(message.node.getID(), 0);
                     this.zirkNode = message.node;
                 }
             }

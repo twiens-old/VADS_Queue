@@ -141,7 +141,7 @@ public class Main {
 
         graph.leave(nodes[7]);
         System.out.println(nodes[7].getID() + " leaving.");
-        Thread.sleep(1000);
+        Thread.sleep(10000);
 
         // 2 sekunden laufen lassen
 
