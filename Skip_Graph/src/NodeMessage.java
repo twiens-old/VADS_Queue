@@ -3,8 +3,6 @@
  */
 public class NodeMessage extends AbstractMessage {
 
-
-
     protected Node node;
     protected MessageType type;
 

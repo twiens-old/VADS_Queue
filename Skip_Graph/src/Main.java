@@ -7,7 +7,7 @@ public class Main {
         int numberOfTests = 40;
 
         for (int i = 0; i < numberOfTests; i++) {
-            boolean success = testGetPositionRequest();
+            boolean success = testLaufSkipGraph();
 
             if (!success) {
                 break;

@@ -188,7 +188,7 @@ public class SkipPlusGraph {
                     sb.append("Range begin is wrong\n");
                     sb.append("Level: " + i + "\n");
                     sb.append("Node: " + node.getID() + " " + node.range[i] + " BUT should be " + ranges[i] + "\n");
-                    return result = false;
+                    result = false;
                 }
 
                 if (node.range[i].getEnd() != ranges[i].getEnd()) {

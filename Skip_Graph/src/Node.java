@@ -135,6 +135,7 @@ public class Node extends Subject implements Comparable<Node> {
      */
     @Override
     protected void onTimeout() {
+        this.heartbeat();
         this.linearizeRule1a();
         this.bridgeRule1b();
 
@@ -147,6 +148,10 @@ public class Node extends Subject implements Comparable<Node> {
         }
 
         this.checkAndSendCircularReference();
+    }
+
+    private void heartbeat() {
+
     }
 
     private void linearizeRule1a() {

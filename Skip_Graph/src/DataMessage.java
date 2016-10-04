@@ -2,6 +2,7 @@
  * Created by twiens on 22.09.2016.
  */
 public class DataMessage extends AbstractMessage {
+
     protected String data;
     protected Integer position;
     protected MessageType type;

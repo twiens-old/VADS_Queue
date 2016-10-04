@@ -15,6 +15,7 @@ public abstract class AbstractMessage {
         CIRCULAR_REFERENCE
     }
 
+    protected boolean sentByCircularNode;
     protected UUID uuid;
     protected Node sender;
     protected Node receiver;

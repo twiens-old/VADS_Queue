@@ -230,82 +230,102 @@ public class QueueNode extends Node {
             allNeighbours.add((QueueNode) node);
         }
 
-        // send right
-        QueueNode nextQueueNode = allNeighbours.higher(this);
+        if (!message.sentByCircularNode) {
+            // send right
+            QueueNode nextQueueNode = allNeighbours.higher(this);
 
-        if (positionHash >= this.rangeStart) {
+            if (positionHash >= this.rangeStart) {
 
-            if (nextQueueNode != null && nextQueueNode.rangeStart < positionHash) {
-                // next responsible
+                if (nextQueueNode != null && nextQueueNode.rangeStart < positionHash) {
+                    // next responsible
 
-                // responsible node is somewhere right of us
-                TreeSet<QueueNode> nodesGreaterThanUs = (TreeSet<QueueNode>) allNeighbours.tailSet(this, false);
-                Iterator<QueueNode> iterator = nodesGreaterThanUs.descendingIterator();
+                    // responsible node is somewhere right of us
+                    TreeSet<QueueNode> nodesGreaterThanUs = (TreeSet<QueueNode>) allNeighbours.tailSet(this, false);
+                    Iterator<QueueNode> iterator = nodesGreaterThanUs.descendingIterator();
 
-                QueueNode current = iterator.next();
+                    QueueNode current = iterator.next();
 
-                while (iterator.hasNext()) {
-                    QueueNode next = iterator.next();
+                    while (iterator.hasNext()) {
+                        QueueNode next = iterator.next();
 
-                    if (positionHash > next.rangeStart) {
-                        break;
+                        if (positionHash > next.rangeStart) {
+                            break;
+                        }
+                        current = next;
                     }
-                    current = next;
-                }
 
-                println("Sending Data from " + this + " to " + current);
+                    println("Sending Data from " + this + " to " + current);
 
-                current.send(message);
+                    current.send(message);
 
-            } else if (nextQueueNode == null && ((QueueNode)zirkNode).rangeStart < positionHash) {
-                println("zirkNode < positionHash");
-                // zirkNode responsilble
-                this.zirkNode.send(message);
-            } else {
-                //we are responsilble
-                if (message instanceof DataMessage) {
-                    println("Storing Element at Node " + this);
-                    this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
-                } else if (message instanceof DequeueMessage) {
-                    DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
-                    this.storedElements.remove(((DequeueMessage) message).position);
-                    storedData.receiver = message.sender;
-                    storedData.sender = this;
-                    storedData.type = AbstractMessage.MessageType.DEQUEUE;
-
-                    this.routing(storedData);
+                } else if (nextQueueNode == null && ((QueueNode)zirkNode).rangeStart < positionHash) {
+                    println("zirkNode < positionHash");
+                    // zirkNode responsilble
+                    message.sentByCircularNode = true;
+                    this.zirkNode.send(message);
                 } else {
-                    return;
+                    //we are responsilble
+                    if (message instanceof DataMessage) {
+                        println("Storing Element at Node " + this);
+                        this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+                    } else if (message instanceof DequeueMessage) {
+                        DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
+                        this.storedElements.remove(((DequeueMessage) message).position);
+                        storedData.receiver = message.sender;
+                        storedData.sender = this;
+                        storedData.type = AbstractMessage.MessageType.DEQUEUE;
+
+                        this.routing(storedData);
+                    } else {
+                        return;
+                    }
                 }
             }
-        }
 
-        // send left
-        QueueNode prevQueueNode = allNeighbours.lower(this);
+            // send left
+            QueueNode prevQueueNode = allNeighbours.lower(this);
 
-        if (positionHash < this.rangeStart) {
-            if (prevQueueNode == null) {
-                // zirklärer Knoten zuständig
-                println("ZirkNode responsible - PositionHash = " + positionHash + "; this.RangeStart = " + this.rangeStart);
-                this.zirkNode.send(message);
-            } else {
-                // responsible node is somewhere left of us
-                TreeSet<QueueNode> nodesLessThanUs = (TreeSet<QueueNode>) allNeighbours.headSet(this);
-                Iterator<QueueNode> iterator = nodesLessThanUs.iterator();
+            if (positionHash < this.rangeStart) {
+                if (prevQueueNode == null) {
+                    // zirklärer Knoten zuständig
+                    println("ZirkNode responsible - PositionHash = " + positionHash + "; this.RangeStart = " + this.rangeStart);
+                    message.sentByCircularNode = true;
+                    this.zirkNode.send(message);
+                } else {
+                    // responsible node is somewhere left of us
+                    TreeSet<QueueNode> nodesLessThanUs = (TreeSet<QueueNode>) allNeighbours.headSet(this);
+                    Iterator<QueueNode> iterator = nodesLessThanUs.iterator();
 
-                QueueNode current = iterator.next();
+                    QueueNode current = iterator.next();
 
-                while (iterator.hasNext()) {
-                    QueueNode next = iterator.next();
+                    while (iterator.hasNext()) {
+                        QueueNode next = iterator.next();
 
-                    if (positionHash < next.rangeStart) {
-                        break;
+                        if (positionHash < next.rangeStart) {
+                            break;
+                        }
+                        current = next;
                     }
-                    current = next;
-                }
 
-                println("Sending Data from " + this + " to " + current);
-                current.send(message);
+                    println("Sending Data from " + this + " to " + current);
+                    current.send(message);
+                }
+            }
+        } else {
+            //we are responsilble
+            if (message instanceof DataMessage) {
+                println("Storing Element at Node " + this);
+                this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+            } else if (message instanceof DequeueMessage) {
+                DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
+                this.storedElements.remove(((DequeueMessage) message).position);
+                storedData.receiver = message.sender;
+                storedData.sender = this;
+                storedData.type = AbstractMessage.MessageType.DEQUEUE;
+
+                this.routing(storedData);
+            } else {
+                return;
             }
         }
     }
