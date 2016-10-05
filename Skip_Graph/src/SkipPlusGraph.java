@@ -103,7 +103,13 @@ public class SkipPlusGraph {
                         if (node.successor[i].getNodeZero() != successor) {
                             sb.append("Successor 0 is wrong\n");
                             sb.append("Level: " + i + " Node: " + node.getID() + "\n");
-                            sb.append("Successor: " + node.successor[i].getNodeZero().getID() + " BUT should be " + successor.getID() + "\n");
+
+                            if (node.successor[i].getNodeZero() == null) {
+                                sb.append("Successor: NULL, BUT should be " + successor.getID() + "\n");
+                            } else {
+                                sb.append("Successor: " + node.successor[i].getNodeZero().getID() + " BUT should be " + successor.getID() + "\n");
+                            }
+
                             result = false;
                         }
                     }
@@ -227,14 +233,27 @@ public class SkipPlusGraph {
 
             // checke Zirkulären Knoten
             if (node.equals(firstNode)) {
+                if (node.zirkNode == null) {
+                    sb.append("\n Zirk Node in " + node.getID() + " is NULL, BUT should be " + lastNode.getID());
+
+                    result = false;
+                }
+
                 if (!node.zirkNode.equals(lastNode)) {
                     sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + lastNode.getID());
 
                     result = false;
                 }
+
             }
 
             if (node.equals(lastNode)) {
+                if (node.zirkNode == null) {
+                    sb.append("\n Zirk Node in " + node.getID() + " is NULL, BUT should be " + firstNode.getID());
+
+                    result = false;
+                }
+
                 if (node.equals(lastNode) && !node.zirkNode.equals(firstNode)){
                     sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + firstNode.getID());
 

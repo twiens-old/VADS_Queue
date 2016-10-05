@@ -189,10 +189,6 @@ public class Node extends Subject implements Comparable<Node> {
                 BitSequence nodeId = entry.getKey();
                 int counter = entry.getValue();
 
-                if (this.zirkNode != null && nodeId.equals(this.zirkNode.getID())) {
-                    println("[" + this.getID() + "] ZirkNode: " + nodeId + " - Counter: " + counter);
-                }
-
                 if (counter > HEATBEAT_WINDOW) {
                     it.remove();
 

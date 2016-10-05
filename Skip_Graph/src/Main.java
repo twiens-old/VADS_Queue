@@ -44,7 +44,7 @@ public class Main {
         System.out.println("Finished initializing starting graph.");
 
         // 2 sekunden laufen lassen
-        Thread.sleep(1000);
+        Thread.sleep(5000);
 
         System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
