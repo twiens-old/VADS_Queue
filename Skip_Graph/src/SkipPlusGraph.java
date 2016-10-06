@@ -67,7 +67,10 @@ public class SkipPlusGraph {
     }
 
     public boolean testSkipPlusGraph() {
+        System.out.println("\n\n################ Skip+-Graph Korrektheitstest ################");
+
         StringBuilder sb = new StringBuilder();
+
         boolean result = true;
 
         TreeSet<Node> treeSet = new TreeSet<>();
@@ -237,9 +240,7 @@ public class SkipPlusGraph {
                     sb.append("\n Zirk Node in " + node.getID() + " is NULL, BUT should be " + lastNode.getID());
 
                     result = false;
-                }
-
-                if (!node.zirkNode.equals(lastNode)) {
+                } else if (!node.zirkNode.equals(lastNode)) {
                     sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + lastNode.getID());
 
                     result = false;
@@ -252,9 +253,7 @@ public class SkipPlusGraph {
                     sb.append("\n Zirk Node in " + node.getID() + " is NULL, BUT should be " + firstNode.getID());
 
                     result = false;
-                }
-
-                if (node.equals(lastNode) && !node.zirkNode.equals(firstNode)){
+                } else if (node.equals(lastNode) && !node.zirkNode.equals(firstNode)){
                     sb.append("\n Zirk Node in " + node.getID() + " is " + node.zirkNode.getID() + " BUT should be " + firstNode.getID());
 
                     result = false;
@@ -270,10 +269,12 @@ public class SkipPlusGraph {
             }
         }
 
-        if (!result) {
-            this.printNeighbourHoodForAllLevels();
-            System.out.println(sb.toString());
-        }
+//        if (!result) {
+//            this.printNeighbourHoodForAllLevels();
+//            System.out.println(sb.toString());
+//        }
+
+        System.out.println("################ Ergebnis = " + result + " ################\n\n");
 
         return result;
     }

@@ -7,7 +7,6 @@ public class DataMessage extends AbstractMessage {
     protected Integer position;
     protected MessageType type;
 
-    // Sender is optional
     public DataMessage(Node sender, Node receiver, String data, Integer position, MessageType type) {
         super(sender, receiver);
         this.data = data;

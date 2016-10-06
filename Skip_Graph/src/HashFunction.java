@@ -5,7 +5,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class HashFunction {
     public static double hashPosition(int pos) {
-        return ( pos % 100) / 100.0;
+        return ( Math.pow(pos, 2) % 100) / 100.0;
     }
 
     public static double hashQueueNode(BitSequence id) {

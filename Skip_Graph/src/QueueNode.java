@@ -48,8 +48,6 @@ public class QueueNode extends Node {
         } else if (message instanceof IntervalMessage) {
             this.handleIntervalMessage((IntervalMessage) message);
         } else if (message instanceof  DataMessage) {
-            println("Node: "+ this.getID() + " Position: " + ((DataMessage) message).position + " (" + ((DataMessage) message).type + ")");
-
             if (((DataMessage) message).type == AbstractMessage.MessageType.ENQUEUE) {
                 this.handleDataMessage((DataMessage) message);
             }
@@ -58,8 +56,6 @@ public class QueueNode extends Node {
                 this.routing((DataMessage) message);
             }
         } else if (message instanceof DequeueMessage) {
-            println("Node: "+ this.getID() + " Position: " + ((DequeueMessage) message).position + " (DEQUEUE MESSAGE)");
-
             this.handleDataMessage((DequeueMessage) message);
         }
     }
@@ -75,12 +71,11 @@ public class QueueNode extends Node {
         this.testQueueAdministrator();
     }
 
-    public void enqueue(DataMessage data) {
-        data.sender = this;
-        println("[" + this + "] Enqueueing new Data Message: " + data.data);
+    public void enqueue(String data) {
+        DataMessage dataMessage = new DataMessage(this, null, data, 0, AbstractMessage.MessageType.ENQUEUE);
 
         PositionRequestMessage getPositionMessage = new PositionRequestMessage(this, 1, PositionRequestMessage.MessageType.ENQUEUE);
-        this.sentPositionRequests.put(getPositionMessage.uuid, data);
+        this.sentPositionRequests.put(getPositionMessage.uuid, dataMessage);
 
         this.handleGetPositionRequests(getPositionMessage);
     }
@@ -162,8 +157,6 @@ public class QueueNode extends Node {
 
     private void handleGetPositionRequests(PositionRequestMessage message) {
         if (this.queueAdministrator) {
-            println("Queue Administrator received Position Request");
-
             if (message.type == PositionRequestMessage.MessageType.ENQUEUE) {
                 IntervalMessage intervalMessage = new IntervalMessage(this, message.sender, this.last + 1, this.last + message.i, message.uuid, IntervalMessage.MessageType.ENQUEUE);
                 this.last += message.i;
@@ -191,14 +184,12 @@ public class QueueNode extends Node {
                 DataMessage dataMessage = this.sentPositionRequests.get(message.requestUuid);
                 dataMessage.position = message.start;
 
-                println("YO HABEN POSITION ERHALTEN DIGGAH - Position = " + dataMessage.position + " Data = " + dataMessage.data);
-
                 this.sentPositionRequests.remove(message.requestUuid);
 
                 this.handleDataMessage(dataMessage);
             } else if (message.type == IntervalMessage.MessageType.DEQUEUE) {
                 if (message.start > message.end) {
-                    println("RECEIVED EMPTY INTERVAL");
+                    // intentionally left empty
                 } else {
                     DequeueMessage dequeueMessage = new DequeueMessage(this, message.start);
                     this.handleDataMessage(dequeueMessage);
@@ -254,22 +245,20 @@ public class QueueNode extends Node {
                         current = next;
                     }
 
-                    println("Sending Data from " + this + " to " + current);
-
                     current.send(message);
 
                 } else if (nextQueueNode == null && ((QueueNode)zirkNode).rangeStart < positionHash) {
-                    println("zirkNode < positionHash");
                     // zirkNode responsilble
                     message.sentByCircularNode = true;
                     this.zirkNode.send(message);
                 } else {
                     //we are responsilble
                     if (message instanceof DataMessage) {
-                        println("Storing Element at Node " + this);
+                        println("Storing Element " + ((DataMessage) message).data + " at Node " + this);
                         this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
                     } else if (message instanceof DequeueMessage) {
                         DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
+
                         this.storedElements.remove(((DequeueMessage) message).position);
                         storedData.receiver = message.sender;
                         storedData.sender = this;
@@ -288,7 +277,6 @@ public class QueueNode extends Node {
             if (positionHash < this.rangeStart) {
                 if (prevQueueNode == null) {
                     // zirklärer Knoten zuständig
-                    println("ZirkNode responsible - PositionHash = " + positionHash + "; this.RangeStart = " + this.rangeStart);
                     message.sentByCircularNode = true;
                     this.zirkNode.send(message);
                 } else {
@@ -307,14 +295,13 @@ public class QueueNode extends Node {
                         current = next;
                     }
 
-                    println("Sending Data from " + this + " to " + current);
                     current.send(message);
                 }
             }
         } else {
             //we are responsilble
             if (message instanceof DataMessage) {
-                println("Storing Element at Node " + this);
+                println("Storing Element " + ((DataMessage) message).data + " at Node " + this);
                 this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
             } else if (message instanceof DequeueMessage) {
                 DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);

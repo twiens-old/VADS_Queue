@@ -1,6 +1,3 @@
-import oracle.jrockit.jfr.events.Bits;
-
-import java.rmi.UnexpectedException;
 import java.util.*;
 
 /**
@@ -298,6 +295,13 @@ public class Node extends Subject implements Comparable<Node> {
                     node2.send(new NodeMessage(this, node2, node1, NodeMessage.MessageType.INTRODUCE));
                 }
             }
+
+            for (Node node3 : this.neighboursForBiDirection) {
+                if (!node1.equals(node3)) {
+                    node1.send(new NodeMessage(this, node1, node3, NodeMessage.MessageType.INTRODUCE));
+                    node3.send(new NodeMessage(this, node3, node1, NodeMessage.MessageType.INTRODUCE));
+                }
+            }
         }
     }
 
@@ -569,18 +573,6 @@ public class Node extends Subject implements Comparable<Node> {
         return null;
     }
 
-/*    public void send(Node v) {
-        if (v.equals(this)) {
-            StringBuilder sb = new StringBuilder();
-            for(StackTraceElement e: getStackTrace()) {
-                sb.append(e.toString() + "\n");
-            }
-            println(sb.toString());
-            System.exit(0);
-        }
-        super.send(v);
-    }*/
-
     public void leave() {
         TreeSet<Node> allNeighbours = new TreeSet<>();
 
@@ -594,30 +586,24 @@ public class Node extends Subject implements Comparable<Node> {
         }
     }
 
-    public void handleLeave(Node leavingNode) {     // TODO: behandle Fall, falls Knoten wieder joinen möchte
-        println("Node: " + this.getID() + " Received Leaving Node Request from Node " + leavingNode.getID());
-
+    public void handleLeave(Node leavingNode) {
         this.leavingNodes.add(leavingNode);
 
         // gebe den Unmittelbaren Nachbarn bescheid, dass diese die Referenzen auf einen Löschen sollen
         for (int i = 0; i < this.getID().length(); i++) {
             if (this.predecessor[i].getNodeZero() != null && this.predecessor[i].getNodeZero().equals(leavingNode)) {
-                System.out.println("Node = " + this.getID() + " Leaving: Set pred0 to minNode");
                 this.predecessor[i].setNodeZero(null);
             }
 
             if (this.predecessor[i].getNodeOne() != null && this.predecessor[i].getNodeOne().equals(leavingNode)) {
-                System.out.println("Node = " + this.getID() + " Leaving: Set pred1 to minNode");
                 this.predecessor[i].setNodeOne(null);
             }
 
             if (this.successor[i].getNodeZero() != null && this.successor[i].getNodeZero().equals(leavingNode)) {
-                System.out.println("Node = " + this.getID() + " Leaving: Set succ0 to maxNode");
                 this.successor[i].setNodeZero(null);
             }
 
             if (this.successor[i].getNodeOne() != null && this.successor[i].getNodeOne().equals(leavingNode)) {
-                System.out.println("Node = " + this.getID() + " Leaving: Set succ1 to maxNode");
                 this.successor[i].setNodeOne(null);
             }
             
@@ -628,11 +614,8 @@ public class Node extends Subject implements Comparable<Node> {
         this.neighboursForBiDirection.remove(leavingNode);
     }
 
-    // TODO: falls destination nicht existiert???
     public void routing(AbstractMessage message) {
         Node destination = message.receiver;
-
-//        message.message.append("Current Hop: " + this.getID() + "\n");
 
         if (destination.equals(this)) {
             message.arrived = true;
@@ -641,14 +624,12 @@ public class Node extends Subject implements Comparable<Node> {
             } else if (message instanceof StringMessage) {
                 println("Data Arrived -> " + ((StringMessage)message).message);
             }
-//            message.message.append("Message arrived at Destination = " + destination.getID() + " Message = \n");
+
             return;
         }
 
         int numberOfMatchingPrefixes = this.getNumberOfMatchingPrefixes(destination);
         boolean bit = destination.getID().getBit(numberOfMatchingPrefixes+1);
-
-//        message.message.append("Number of Matching Prefixes = " + numberOfMatchingPrefixes + " - Bit at index + 1 = " + bit + "\n");
 
         Node pred0 = this.predecessor[numberOfMatchingPrefixes].getNodeZero();
         Node pred1 = this.predecessor[numberOfMatchingPrefixes].getNodeOne();
@@ -772,12 +753,12 @@ public class Node extends Subject implements Comparable<Node> {
 
         println("Knoten ID: " + this.getID());
 
-        print("Received Nodes: ");
-        Iterator<Node> iterator = receivedNodes.iterator();
-        while(iterator.hasNext()) {
-            print(iterator.next().getID() + ", ");
-        }
-        println("");
+//        print("Received Nodes: ");
+//        Iterator<Node> iterator = receivedNodes.iterator();
+//        while(iterator.hasNext()) {
+//            print(iterator.next().getID() + ", ");
+//        }
+//        println("");
 
         for (int i = 0; i < this.getID().length(); i++) {
             println("Level " + i +  "  Pred: " + this.predecessor[i] + " Succ:" + this.successor[i]);
