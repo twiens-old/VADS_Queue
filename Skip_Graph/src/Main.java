@@ -116,18 +116,16 @@ public class Main {
         nodes[3].enqueue("B");
         nodes[3].enqueue("C");
 
-        Thread.sleep(5000);
+        while (QueueNode.storeCounter != 103)
+            Thread.sleep(1000);
 
         for (int i=0; i < 103; i++)
             nodes[3].dequeue();
 
-        //nodes[1].dequeue();
-        //nodes[2].dequeue();
-        //nodes[3].dequeue();
-
         Thread.sleep(5000);
 
-        System.out.println("Stored elements: " + QueueNode.storeCounter);
+        System.out.println("Successful stored elements: " + QueueNode.storeCounter);
+        System.out.println("Successful dequeued elements: " + QueueNode.dequeuedElements);
 
         for (int i = 0; i < NUMBER_OF_NODES; i++) {
             if (nodes[i] != null) {
