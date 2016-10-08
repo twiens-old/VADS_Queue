@@ -9,6 +9,8 @@ public class QueueNode extends Node {
     private boolean queueAdministrator;
     private int first, last;
 
+    protected static int storeCounter = 0;
+
     private double rangeStart;
 
     private List<PositionRequestMessage> getPositionMessages;
@@ -40,14 +42,17 @@ public class QueueNode extends Node {
         super.onMessageReceived(message);
 
         if (message instanceof PositionRequestMessage) {
+           // println("positionrequest message unterwegs");
             if (!this.queueAdministrator) {
                 this.getPositionMessages.add((PositionRequestMessage) message);
             } else {
                 this.handleGetPositionRequests((PositionRequestMessage) message);
             }
         } else if (message instanceof IntervalMessage) {
+           // println("intervall message unterwegs");
             this.handleIntervalMessage((IntervalMessage) message);
         } else if (message instanceof  DataMessage) {
+          //  println("data message unterwegs");
             if (((DataMessage) message).type == AbstractMessage.MessageType.ENQUEUE) {
                 this.handleDataMessage((DataMessage) message);
             }
@@ -56,6 +61,7 @@ public class QueueNode extends Node {
                 this.routing((DataMessage) message);
             }
         } else if (message instanceof DequeueMessage) {
+           // println("dequeue message unterwegs");
             this.handleDataMessage((DequeueMessage) message);
         }
     }
@@ -135,13 +141,19 @@ public class QueueNode extends Node {
             return;
         }
 
-        int bandwidth = Math.max(message.end - message.start, 0);
+        int bandwidth = Math.max(message.end - message.start + 1, 0);
 
         int intervalStart = message.start;
 
+        boolean first = true;
         if (message.type == IntervalMessage.MessageType.ENQUEUE) {
             for (PositionRequestMessage prMessage : queue) {
-                prMessage.sender.send(new IntervalMessage(this, prMessage.sender, intervalStart, intervalStart + prMessage.i - 1, prMessage.uuid, IntervalMessage.MessageType.ENQUEUE));
+                if (first) {
+                    prMessage.sender.send(new IntervalMessage(this, prMessage.sender, intervalStart, intervalStart + prMessage.i - 1, prMessage.uuid, IntervalMessage.MessageType.ENQUEUE));
+                    first = false;
+                } else {
+                    prMessage.sender.send(new IntervalMessage(this, prMessage.sender, intervalStart, intervalStart + prMessage.i, prMessage.uuid, IntervalMessage.MessageType.ENQUEUE));
+                }
                 intervalStart += prMessage.i;
             }
         } else if (message.type == IntervalMessage.MessageType.DEQUEUE) {
@@ -190,6 +202,7 @@ public class QueueNode extends Node {
             } else if (message.type == IntervalMessage.MessageType.DEQUEUE) {
                 if (message.start > message.end) {
                     // intentionally left empty
+                    println("\nSTART GRÖßER ALS END\n");
                 } else {
                     DequeueMessage dequeueMessage = new DequeueMessage(this, message.start);
                     this.handleDataMessage(dequeueMessage);
@@ -255,6 +268,7 @@ public class QueueNode extends Node {
                     //we are responsilble
                     if (message instanceof DataMessage) {
                         println("Storing Element " + ((DataMessage) message).data + " at Node " + this);
+                        storeCounter++;
                         this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
                     } else if (message instanceof DequeueMessage) {
                         DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
@@ -302,6 +316,7 @@ public class QueueNode extends Node {
             //we are responsilble
             if (message instanceof DataMessage) {
                 println("Storing Element " + ((DataMessage) message).data + " at Node " + this);
+                storeCounter++;
                 this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
             } else if (message instanceof DequeueMessage) {
                 DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);

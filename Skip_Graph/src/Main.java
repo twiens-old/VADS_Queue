@@ -107,54 +107,27 @@ public class Main {
 
         graph.testSkipPlusGraph();
 
-        nodes[4].enqueue("Test Data 1");
-        nodes[0].enqueue("Test Data 2");
-        nodes[6].enqueue("Test Data 3");
-        nodes[5].enqueue("Test Data 4");
-        nodes[3].enqueue("Test Data 5");
-        nodes[4].enqueue("Test Data 6");
-        nodes[0].enqueue("Test Data 7");
-        nodes[6].enqueue("Test Data 8");
-        nodes[5].enqueue("Test Data 9");
-        nodes[3].enqueue("Test Data 10");
-        nodes[4].enqueue("Test Data 11");
-        nodes[0].enqueue("Test Data 12");
-        nodes[6].enqueue("Test Data 13");
-        nodes[5].enqueue("Test Data 14");
-        nodes[3].enqueue("Test Data 15");
-        nodes[4].enqueue("Test Data 16");
-        nodes[0].enqueue("Test Data 17");
-        nodes[6].enqueue("Test Data 18");
-        nodes[5].enqueue("Test Data 19");
-        nodes[3].enqueue("Test Data 20");
-        nodes[4].enqueue("Test Data 21");
-        nodes[0].enqueue("Test Data 22");
-        nodes[6].enqueue("Test Data 23");
-        nodes[5].enqueue("Test Data 24");
-        nodes[3].enqueue("Test Data 25");
-        nodes[4].enqueue("Test Data 26");
-        nodes[0].enqueue("Test Data 27");
-        nodes[6].enqueue("Test Data 28");
-        nodes[5].enqueue("Test Data 29");
-        nodes[3].enqueue("Test Data 30");
-        nodes[4].enqueue("Test Data 31");
-        nodes[0].enqueue("Test Data 32");
-        nodes[6].enqueue("Test Data 33");
-        nodes[5].enqueue("Test Data 34");
-        nodes[3].enqueue("Test Data 35");
-        nodes[4].enqueue("Test Data 36");
-        nodes[0].enqueue("Test Data 37");
-        nodes[6].enqueue("Test Data 38");
-        nodes[5].enqueue("Test Data 39");
-        nodes[3].enqueue("Test Data 40");
+
+        for (int i=0; i < 100; i++) {
+            int rand = ((int)(Math.random() * 10)) % 8;
+            nodes[rand].enqueue("Test Data " + i);
+        }
+        nodes[3].enqueue("A");
+        nodes[3].enqueue("B");
+        nodes[3].enqueue("C");
 
         Thread.sleep(5000);
 
-        nodes[1].dequeue();
-        nodes[2].dequeue();
-        nodes[3].dequeue();
+        for (int i=0; i < 103; i++)
+            nodes[3].dequeue();
 
-        Thread.sleep(50000);
+        //nodes[1].dequeue();
+        //nodes[2].dequeue();
+        //nodes[3].dequeue();
+
+        Thread.sleep(5000);
+
+        System.out.println("Stored elements: " + QueueNode.storeCounter);
 
         for (int i = 0; i < NUMBER_OF_NODES; i++) {
             if (nodes[i] != null) {
