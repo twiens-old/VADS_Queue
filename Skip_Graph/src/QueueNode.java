@@ -24,6 +24,7 @@ public class QueueNode extends Node {
     private boolean dequeueInProgress;
     private LinkedList<String> outstandingEnqueues;
     private int outstandingDequeues;
+    private LinkedList<Integer> outstandingDataDeliveries;
 
     private HashMap<UUID, Queue<PositionRequestMessage>> returnAddresses;
     private HashMap<UUID, DataMessage> sentPositionRequests;
@@ -43,6 +44,7 @@ public class QueueNode extends Node {
 
         this.outstandingEnqueues = new LinkedList<>();
         this.outstandingDequeues = 0;
+        this.outstandingDataDeliveries = new LinkedList<>();
         this.enqueueInProgress = false;
         this.dequeueInProgress = false;
 

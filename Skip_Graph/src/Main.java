@@ -1,23 +1,23 @@
+import java.util.Queue;
+
 /**
  * Created by twiens on 24.08.16.
  */
 public class Main {
-    private static final int NUMBER_OF_BITS = 3;
-    private static final int NUMBER_OF_NODES = 8;
+    private static final int NUMBER_OF_BITS = 6;
+    private static final int NUMBER_OF_NODES = 40;
 
     public static void main(String[] args) throws Exception {
 
-//        int numberOfTests = 40;
+        int numberOfTests = 1;
 
-//        for (int i = 0; i < numberOfTests; i++) {
-//            boolean success = testGetPositionRequest();
+        for (int i = 0; i < numberOfTests; i++) {
+            System.out.println("Test Case " + i);
+            UniqueRandomBitStringGenerator.ResetBitStrings();
+            enqueueAndDequeueData();
+        }
 
-//            if (!success) {
-//                break;
-//            }
-//        }
-
-        enqueueAndDequeueData();
+        System.out.println("SUCCESSFULL");
     }
 
     private static boolean buildSkip() throws InterruptedException{
@@ -72,7 +72,7 @@ public class Main {
         graph.leave(nodes[2]);
         System.out.println("\n" + nodes[2].getID() + " leaving.");
 
-        Thread.sleep(5000);
+        Thread.sleep(6000);
 
         result = graph.testSkipPlusGraph();
 
@@ -109,7 +109,7 @@ public class Main {
 
 
         for (int i=0; i < 100; i++) {
-            int rand = ((int)(Math.random() * 10)) % 8;
+            int rand = ((int)(Math.random() * 10)) % 32;
             nodes[rand].enqueue("Test Data " + i);
         }
         nodes[3].enqueue("A");
@@ -122,9 +122,11 @@ public class Main {
         for (int i=0; i < 103; i++)
             nodes[3].dequeue();
 
-        Thread.sleep(5000);
+        while (QueueNode.dequeuedElements != 103)
+            Thread.sleep(1000);
 
         System.out.println("Successful stored elements: " + QueueNode.storeCounter);
+        System.out.println("Successful received dequeue requests: " + QueueNode.dequeueCounter);
         System.out.println("Successful dequeued elements: " + QueueNode.dequeuedElements);
 
         for (int i = 0; i < NUMBER_OF_NODES; i++) {
