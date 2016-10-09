@@ -24,6 +24,7 @@ public class QueueNode extends Node {
     private boolean dequeueInProgress;
     private LinkedList<String> outstandingEnqueues;
     private int outstandingDequeues;
+    private HashMap<Integer, Node> outstandingDequeuesResponses;
 
     private HashMap<UUID, Queue<PositionRequestMessage>> returnAddresses;
     private HashMap<UUID, DataMessage> sentPositionRequests;
@@ -45,6 +46,7 @@ public class QueueNode extends Node {
         this.outstandingDequeues = 0;
         this.enqueueInProgress = false;
         this.dequeueInProgress = false;
+        this.outstandingDequeuesResponses = new HashMap<>();
 
 
         this.rangeStart = HashFunction.hashQueueNode(this.ID);
@@ -325,20 +327,32 @@ public class QueueNode extends Node {
                     if (message instanceof DataMessage) {
                         println("Storing Element " + ((DataMessage) message).data + "(" + ((DataMessage) message).position + ")" +  " at Node " + this);
                         storeCounter++;
-                        this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+
+                        if (this.outstandingDequeuesResponses.containsKey(((DataMessage) message).position)) {
+                            message.receiver = this.outstandingDequeuesResponses.get(((DataMessage) message).position);
+                            message.sender = this;
+                            ((DataMessage)message).type = AbstractMessage.MessageType.DEQUEUE;
+                            println("Outstanding dequeue at node " + this + " used with position" + ((DataMessage) message).position);
+
+                            this.routing(message);
+                        } else {
+                            this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+                        }
                     } else if (message instanceof DequeueMessage) {
                         dequeueCounter++;
                         DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
 
                         if (storedData == null) {
+                            this.outstandingDequeuesResponses.put(((DequeueMessage) message).position, message.sender);
                             System.out.println("Stored data null bei " + this + "(" + ((DequeueMessage) message).position + ")");
-                        }
-                        this.storedElements.remove(((DequeueMessage) message).position);
-                        storedData.receiver = message.sender;
-                        storedData.sender = this;
-                        storedData.type = AbstractMessage.MessageType.DEQUEUE;
+                        } else {
+                            this.storedElements.remove(((DequeueMessage) message).position);
+                            storedData.receiver = message.sender;
+                            storedData.sender = this;
+                            storedData.type = AbstractMessage.MessageType.DEQUEUE;
 
-                        this.routing(storedData);
+                            this.routing(storedData);
+                        }
                     } else {
                         return;
                     }
@@ -379,16 +393,31 @@ public class QueueNode extends Node {
             if (message instanceof DataMessage) {
                 println("Storing Element " + ((DataMessage) message).data + "(" + ((DataMessage) message).position + ")" + " at Node " + this);
                 storeCounter++;
-                this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+
+                if (this.outstandingDequeuesResponses.containsKey(((DataMessage) message).position)) {
+                    message.receiver = this.outstandingDequeuesResponses.get(((DataMessage) message).position);
+                    message.sender = this;
+                    ((DataMessage)message).type = AbstractMessage.MessageType.DEQUEUE;
+
+                    this.routing(message);
+                } else {
+                    this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
+                }
             } else if (message instanceof DequeueMessage) {
                 dequeueCounter++;
                 DataMessage storedData = this.storedElements.get(((DequeueMessage) message).position);
-                this.storedElements.remove(((DequeueMessage) message).position);
-                storedData.receiver = message.sender;
-                storedData.sender = this;
-                storedData.type = AbstractMessage.MessageType.DEQUEUE;
 
-                this.routing(storedData);
+                if (storedData == null) {
+                    this.outstandingDequeuesResponses.put(((DequeueMessage) message).position, message.sender);
+                    System.out.println("Stored data null bei " + this + "(" + ((DequeueMessage) message).position + ")");
+                } else {
+                    this.storedElements.remove(((DequeueMessage) message).position);
+                    storedData.receiver = message.sender;
+                    storedData.sender = this;
+                    storedData.type = AbstractMessage.MessageType.DEQUEUE;
+                    println("Outstanding dequeue at node " + this + " used with position" + ((DataMessage) message).position);
+                    this.routing(storedData);
+                }
             } else {
                 return;
             }
