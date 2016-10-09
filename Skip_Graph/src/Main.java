@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 //        buildSkip();
 //        buildSkipAndLeave();
-//        enqueueAndDequeueData();
+        enqueueAndDequeueData();
 //        leaveAndExchangeData();
     }
 
@@ -105,7 +105,7 @@ public class Main {
 
 
         for (int i=0; i < 100; i++) {
-            int rand = ((int)(Math.random() * 10)) % 32;
+            int rand = (int)(Math.random() * NUMBER_OF_NODES);
             nodes[rand].enqueue("Test Data " + i);
         }
         nodes[3].enqueue("A");
