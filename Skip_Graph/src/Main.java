@@ -6,7 +6,13 @@ public class Main {
     private static final int NUMBER_OF_NODES = 50;
 
     public static void main(String[] args) throws Exception {
-        enqueueAndDequeueData();
+        //buildSkip();
+        //buildSkipAndLeave();
+
+        //enqueueAndDequeueData();
+
+        leaveAndExchangeData();
+
     }
 
     private static boolean buildSkip() throws InterruptedException{
@@ -126,91 +132,40 @@ public class Main {
         }
     }
 
-    private static boolean testLaufSkipGraph() throws InterruptedException{
-        UniqueRandomBitStringGenerator.ResetBitStrings();
+    private static void leaveAndExchangeData() throws InterruptedException {
+        SkipPlusGraph graph = new SkipPlusGraph(NUMBER_OF_BITS);
+        QueueNode[] nodes = new QueueNode[NUMBER_OF_NODES];
 
-        int numberOfNodes = 8;
+        for (int i = 0; i < NUMBER_OF_NODES; i++) {
+            BitSequence sequence = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(NUMBER_OF_BITS);
 
-        int numberOfBits = 3;
-
-        SkipPlusGraph graph = new SkipPlusGraph(numberOfBits);
-        Node[] nodes = new Node[(int) Math.pow(2, numberOfBits)];
-
-        for (int i = 0; i < numberOfNodes; i++) {
-            BitSequence sequence = UniqueRandomBitStringGenerator.generateUniqueRandomBitSequence(numberOfBits);
-
-            Node node =  new Node(sequence.toString());
+            QueueNode node =  new QueueNode(sequence.toString());
             nodes[i] = node;
         }
 
-        System.out.println("Finished generating BitSequences.");
-
-//        for (int i = 0; i < 20; i = i+5) {
-//            nodes[i+0].send(nodes[i+1]);
-//            nodes[i+2].send(nodes[i+0]);
-//            nodes[i+3].send(nodes[i+2]);
-//            nodes[i+4].send(nodes[i+1]);
-
-//            if (i != 0) {
-//                nodes[i+0].send(nodes[i-1]);
-//            }
-//        }
-
-        System.out.println("Finished initializing starting graph.");
-
-        for (int i = 0; i < numberOfNodes; i++) {
+        for (int i = 0; i < NUMBER_OF_NODES; i++) {
             graph.join(nodes[i]);
             Thread.sleep(500);
         }
 
-        // 2 sekunden laufen lassen
-        Thread.sleep(1000);
-
-        graph.leave(nodes[2]);
-        System.out.println(nodes[2].getID() + " leaving.");
-        Thread.sleep(1000);
-
-        graph.leave(nodes[6]);
-        System.out.println(nodes[6].getID() + " leaving.");
-        Thread.sleep(1000);
-
-        graph.leave(nodes[7]);
-        System.out.println(nodes[7].getID() + " leaving.");
         Thread.sleep(10000);
 
-        // 2 sekunden laufen lassen
-
-        System.out.println("");
-        System.out.println("################ Ultimativer Skip+-Graph Korrektheitstest ################");
         boolean result = graph.testSkipPlusGraph();
-        System.out.println("################ Ergebnis = " + result + " ################\n\n");
 
-        StringMessage[] messages = new StringMessage[10];
-        for (int i = 0; i < 6; i++) {
-            messages[i] = new StringMessage(null, nodes[i], "Start: " + nodes[i].getID() + " - Destination: " + nodes[i+1].getID() + "\n");
 
-            nodes[i].send(messages[i]);
-            Thread.sleep(500);
-        }
+        graph.leave(nodes[7]);
+        System.out.println("\n" + nodes[2].getID() + " leaving.");
 
-//        nodes[2].printNeighbourhood();
-//        nodes[6].printNeighbourhood();
-//        nodes[5].printNeighbourhood();
+        Thread.sleep(6000);
 
-        for (int i = 0; i < 6; i++) {
-            if (!messages[i].arrived) {
-                System.out.println(messages[i].message.toString());
-            } else {
-                System.out.println(i + "arrived.");
-            }
-        }
+        result = graph.testSkipPlusGraph();
 
-        for (int i = 0; i < numberOfNodes; i++) {
+        graph.printNeighbourHoodForAllLevels();
+
+        for (int i = 0; i < NUMBER_OF_NODES; i++) {
             if (nodes[i] != null) {
                 nodes[i].stopSubject();
             }
         }
-
-        return result;
     }
 }

@@ -81,6 +81,9 @@ public class QueueNode extends Node {
         } else if (message instanceof DequeueMessage) {
            // println("dequeue message unterwegs");
             this.handleDataMessage((DequeueMessage) message);
+        } else if (message instanceof DataExchangeMessage) {
+            println("Added Data from Node " + ((DataExchangeMessage) message).sender + "in Node " + this);
+            this.storedElements.putAll(((DataExchangeMessage) message).data);
         }
     }
 
@@ -93,6 +96,27 @@ public class QueueNode extends Node {
 
         this.combine();
         this.testQueueAdministrator();
+    }
+
+    @Override
+    public void leave() {
+        super.leave();
+
+        Node node = null;
+        if (this.predecessor[0].getNodeZero() == null & this.predecessor[0].getNodeOne() == null) {
+            node = this.zirkNode;
+        } else if (this.predecessor[0].getNodeZero() == null && this.predecessor[0].getNodeOne() !=  null) {
+            node = this.predecessor[0].getNodeOne();
+        } else if (this.predecessor[0].getNodeZero() != null && this.predecessor[0].getNodeOne() ==  null) {
+            node = this.predecessor[0].getNodeZero();
+        } else if (this.predecessor[0].getNodeOne().isGreaterThan(this.predecessor[0].getNodeZero())) {
+            node = this.predecessor[0].getNodeOne();
+        } else if (this.predecessor[0].getNodeZero().isGreaterThan(this.predecessor[0].getNodeOne())) {
+            node = this.predecessor[0].getNodeZero();
+        }
+
+        DataExchangeMessage deMessage = new DataExchangeMessage(this, node, this.storedElements);
+        node.send(deMessage);
     }
 
     public void enqueue(String data) {
@@ -399,6 +423,7 @@ public class QueueNode extends Node {
                     message.sender = this;
                     ((DataMessage)message).type = AbstractMessage.MessageType.DEQUEUE;
                     println("Outstanding dequeue at node " + this + " used with position" + ((DataMessage) message).position);
+
                     this.routing(message);
                 } else {
                     this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
