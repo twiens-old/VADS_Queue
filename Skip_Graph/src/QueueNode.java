@@ -398,7 +398,7 @@ public class QueueNode extends Node {
                     message.receiver = this.outstandingDequeuesResponses.get(((DataMessage) message).position);
                     message.sender = this;
                     ((DataMessage)message).type = AbstractMessage.MessageType.DEQUEUE;
-
+                    println("Outstanding dequeue at node " + this + " used with position" + ((DataMessage) message).position);
                     this.routing(message);
                 } else {
                     this.storedElements.put(((DataMessage)message).position, ((DataMessage)message));
@@ -415,7 +415,7 @@ public class QueueNode extends Node {
                     storedData.receiver = message.sender;
                     storedData.sender = this;
                     storedData.type = AbstractMessage.MessageType.DEQUEUE;
-                    println("Outstanding dequeue at node " + this + " used with position" + ((DataMessage) message).position);
+
                     this.routing(storedData);
                 }
             } else {
